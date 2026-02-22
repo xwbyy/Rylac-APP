@@ -8,6 +8,22 @@
   ],
   "routes": [
     {
+      "src": "/css/(.*)",
+      "dest": "public/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "public/js/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "public/$1",
+      "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "server.js"
     },
@@ -17,6 +33,10 @@
     },
     {
       "src": "/(login|register|chat|profile|admin)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
       "dest": "server.js"
     }
   ]
