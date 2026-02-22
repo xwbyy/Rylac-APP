@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile – Rylac App</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+  <link rel="stylesheet" href="/css/auth.css">
+  <style>
+    body { background: #f0f4ff; }
+    .profile-container { max-width: 600px; margin: 0 auto; padding: 2rem 1rem; }
+    .profile-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .profile-cover { background: linear-gradient(135deg, #6366f1, #8b5cf6); height: 120px; }
+    .profile-body { padding: 0 2rem 2rem; }
+    .profile-avatar-wrap { margin-top: -50px; margin-bottom: 1rem; }
+    .profile-avatar {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: 4px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem; font-weight: 700; color: white;
+      overflow: hidden;
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { font-size: 1.5rem; font-weight: 800; color: #0f172a; }
+    .profile-username { color: #64748b; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .profile-id-badge {
+      display: inline-block;
+      background: #ede9fe; color: #6366f1;
+      padding: 0.2rem 0.7rem; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem;
+    }
+    .profile-bio { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .profile-status-tag {
+      background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0;
+      padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.88rem; margin-bottom: 1.5rem;
+    }
+    .section-divider { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+    .profile-stat { text-align: center; }
+    .stat-value { font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+    .stat-label { font-size: 0.78rem; color: #64748b; }
+    .nav-bar {
+      position: sticky; top: 0; z-index: 10;
+      background: white; border-bottom: 1px solid #e2e8f0;
+      padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .nav-bar a { text-decoration: none; color: #64748b; font-weight: 500; }
+    .nav-bar a:hover { color: #6366f1; }
+    .back-link { display: flex; align-items: center; gap: 0.4rem; color: #6366f1; font-weight: 600; }
+    .change-pwd-form { display: flex; flex-direction: column; gap: 1rem; }
+    .change-pwd-form input {
+      width: 100%; padding: 0.75rem 1rem;
+      border: 2px solid #e2e8f0; border-radius: 10px;
+      font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+    }
+    .change-pwd-form input:focus { border-color: #6366f1; }
+    .alert { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; margin-bottom: 1rem; }
+    .alert-success { background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0; }
+    .alert-error { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    
+    @media (max-width: 600px) {
+      .nav-bar { padding: 0.75rem 1rem; font-size: 0.85rem; }
+      .profile-container { padding: 1rem; }
+      .profile-body { padding: 0 1.25rem 1.5rem; }
+      .profile-name { font-size: 1.25rem; }
+      .grid-2 { grid-template-columns: 1fr; gap: 1rem; }
+      .profile-stat { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem; }
+      .stat-value { font-size: 1rem; }
+      .change-pwd-form div[style*="display:flex"] { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <a href="/chat" class="back-link">← Back to Chat</a>
+  <span style="flex:1"></span>
+  <a href="/chat">💬 Chat</a>
+  <button onclick="logout()" style="background:none;border:none;cursor:pointer;color:#64748b;font-weight:500;font-family:inherit;">🚪 Logout</button>
+</div>
+
+<div class="profile-container">
+  <div id="alert-box" class="alert" style="display:none"></div>
+
+  <!-- Profile Card -->
+  <div class="profile-card">
+    <div class="profile-cover"></div>
+    <div class="profile-body">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profile-avatar">⏳</div>
+      </div>
+      <div class="profile-name" id="profile-name">Loading...</div>
+      <div class="profile-username" id="profile-username">@username</div>
+      <div class="profile-id-badge">ID: <span id="profile-id">—</span></div>
+      <div class="profile-bio" id="profile-bio"></div>
+      <div class="profile-status-tag" id="profile-status"></div>
+
+      <div class="grid-2">
+        <div class="profile-stat">
+          <div class="stat-value" id="stat-joined">—</div>
+          <div class="stat-label">Joined</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="stat-theme">—</div>
+          <div class="stat-label">Theme</div>
+        </div>
+        <div class="profile-stat">
+          <div class="stat-value" id="stat-notif">—</div>
+          <div class="stat-label">Notifications</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile -->
+  <div class="profile-card" style="margin-top:1.5rem; padding: 2rem;">
+    <h3 style="font-weight:700;margin-bottom:1.5rem;">✏️ Edit Profile</h3>
+    <form class="change-pwd-form" id="edit-form">
+      <div>
+        <label style="font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:0.4rem;">Display Name</label>
+        <input type="text" id="edit-displayName" maxlength="50" required />
+      </div>
+      <div>
+        <label style="font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:0.4rem;">Avatar URL</label>
+        <input type="url" id="edit-avatar" placeholder="https://example.com/photo.jpg" />
+      </div>
+      <div>
+        <label style="font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:0.4rem;">Bio (max 200 chars)</label>
+        <input type="text" id="edit-bio" maxlength="200" />
+      </div>
+      <div>
+        <label style="font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:0.4rem;">Status</label>
+        <input type="text" id="edit-status" maxlength="100" />
+      </div>
+      <div style="display:flex;gap:1rem;">
+        <div style="flex:1">
+          <label style="font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:0.4rem;">Theme</label>
+          <select id="edit-theme" style="width:100%;padding:0.75rem;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;">
+            <option value="light">☀️ Light</option>
+            <option value="dark">🌙 Dark</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:0.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:0.4rem;">Notifications</label>
+          <select id="edit-notif" style="width:100%;padding:0.75rem;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:0.9rem;outline:none;">
+            <option value="true">🔔 On</option>
+            <option value="false">🔕 Off</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit">💾 Save Changes</button>
+    </form>
+  </div>
+
+  <!-- Change Password -->
+  <div class="profile-card" style="margin-top:1.5rem; padding: 2rem;">
+    <h3 style="font-weight:700;margin-bottom:1.5rem;">🔒 Change Password</h3>
+    <form class="change-pwd-form" id="pwd-form">
+      <input type="password" id="cur-pwd" placeholder="Current password" required />
+      <input type="password" id="new-pwd" placeholder="New password (min 6 chars)" required minlength="6" />
+      <input type="password" id="confirm-pwd" placeholder="Confirm new password" required />
+      <button type="submit" class="btn-submit">🔄 Update Password</button>
+    </form>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+
+async function loadProfile() {
+  try {
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) { window.location.href = '/login'; return; }
+    currentUser = data.user;
+    renderProfile(currentUser);
+  } catch { window.location.href = '/login'; }
+}
+
+function renderProfile(user) {
+  const avatarEl = document.getElementById('profile-avatar');
+  if (user.avatar) {
+    avatarEl.innerHTML = `<img src="${user.avatar}" alt="" onerror="this.parentElement.textContent='${user.displayName[0]}'">`;
+  } else {
+    avatarEl.textContent = user.displayName[0].toUpperCase();
+  }
+  document.getElementById('profile-name').textContent = user.displayName;
+  document.getElementById('profile-username').textContent = '@' + user.username;
+  document.getElementById('profile-id').textContent = user.userId;
+  document.getElementById('profile-bio').textContent = user.bio || '';
+  document.getElementById('profile-status').textContent = '💬 ' + (user.status || 'Hey there!');
+  document.getElementById('stat-joined').textContent = new Date(user.createdAt).toLocaleDateString('en', { month: 'short', year: 'numeric' });
+  document.getElementById('stat-theme').textContent = user.theme === 'dark' ? '🌙' : '☀️';
+  document.getElementById('stat-notif').textContent = user.notificationSound !== false ? '🔔' : '🔕';
+
+  // Fill edit form
+  document.getElementById('edit-displayName').value = user.displayName || '';
+  document.getElementById('edit-avatar').value = user.avatar || '';
+  document.getElementById('edit-bio').value = user.bio || '';
+  document.getElementById('edit-status').value = user.status || '';
+  document.getElementById('edit-theme').value = user.theme || 'light';
+  document.getElementById('edit-notif').value = String(user.notificationSound !== false);
+}
+
+function showAlert(msg, type) {
+  const box = document.getElementById('alert-box');
+  box.textContent = msg;
+  box.className = `alert alert-${type}`;
+  box.style.display = 'block';
+  setTimeout(() => { box.style.display = 'none'; }, 4000);
+}
+
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    displayName: document.getElementById('edit-displayName').value.trim(),
+    avatar: document.getElementById('edit-avatar').value.trim(),
+    bio: document.getElementById('edit-bio').value.trim(),
+    status: document.getElementById('edit-status').value.trim(),
+    theme: document.getElementById('edit-theme').value,
+    notificationSound: document.getElementById('edit-notif').value === 'true',
+  };
+  try {
+    const res = await fetch('/api/users/profile/update', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.success) { currentUser = data.user; renderProfile(data.user); showAlert('Profile updated!', 'success'); }
+    else showAlert(data.message, 'error');
+  } catch { showAlert('Failed to update.', 'error'); }
+});
+
+document.getElementById('pwd-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const curPwd = document.getElementById('cur-pwd').value;
+  const newPwd = document.getElementById('new-pwd').value;
+  const confirmPwd = document.getElementById('confirm-pwd').value;
+  if (newPwd !== confirmPwd) { showAlert('Passwords do not match.', 'error'); return; }
+  try {
+    const res = await fetch('/api/users/password/change', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify({ currentPassword: curPwd, newPassword: newPwd }),
+    });
+    const data = await res.json();
+    if (data.success) { showAlert('Password changed! Please login again.', 'success'); setTimeout(() => window.location.href = '/login', 2000); }
+    else showAlert(data.message, 'error');
+  } catch { showAlert('Failed to change password.', 'error'); }
+});
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login';
+}
+
+loadProfile();
+</script>
+</body>
+</html>

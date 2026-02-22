@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat – Rylac App</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+  <link rel="stylesheet" href="/css/chat.css">
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-logo">💬</div>
+  <div class="loading-text">Rylac</div>
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="context-menu">
+  <div class="ctx-item" id="ctx-reply">↩️ Reply</div>
+  <div class="ctx-item" id="ctx-react">😊 React</div>
+  <div class="ctx-item" id="ctx-copy">📋 Copy Text</div>
+  <div class="ctx-item danger" id="ctx-delete-me">🗑️ Delete for Me</div>
+  <div class="ctx-item danger" id="ctx-delete-all" style="display:none">🗑️ Delete for Everyone</div>
+</div>
+
+<!-- React Picker (inline) -->
+<div class="context-menu" id="react-menu" style="min-width:auto">
+  <div style="display:flex; gap:0.2rem; padding:0.5rem;">
+    <button class="emoji-btn-item" data-emoji="❤️">❤️</button>
+    <button class="emoji-btn-item" data-emoji="😂">😂</button>
+    <button class="emoji-btn-item" data-emoji="😮">😮</button>
+    <button class="emoji-btn-item" data-emoji="😢">😢</button>
+    <button class="emoji-btn-item" data-emoji="👍">👍</button>
+    <button class="emoji-btn-item" data-emoji="👎">👎</button>
+    <button class="emoji-btn-item" data-emoji="🔥">🔥</button>
+  </div>
+</div>
+
+<!-- App Container -->
+<div class="app-container" id="app-container" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="app-logo">
+        <span class="logo-icon">💬</span>
+        <span class="logo-text">Rylac</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="search-btn" title="Search users">🔍</button>
+        <button class="icon-btn" id="theme-btn" title="Toggle theme">🌙</button>
+        <button class="icon-btn" id="profile-btn" title="Your profile">👤</button>
+        <button class="icon-btn" id="logout-btn" title="Logout">🚪</button>
+      </div>
+    </div>
+
+    <!-- Search bar -->
+    <div class="sidebar-search">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="contact-search" placeholder="Search contacts..." />
+      </div>
+    </div>
+
+    <!-- Contacts -->
+    <div class="contacts-list" id="contacts-list">
+      <div class="empty-contacts">
+        <span class="empty-icon">💬</span>
+        <p>No conversations yet.<br>Search for users to start chatting!</p>
+      </div>
+    </div>
+
+    <!-- Own Profile -->
+    <div class="sidebar-profile" id="own-profile-bar">
+      <div class="avatar" id="own-avatar"></div>
+      <div>
+        <div class="profile-name" id="own-name">Loading...</div>
+        <div class="profile-status">ID: <span id="own-id">—</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CHAT AREA -->
+  <main class="chat-area" id="chat-area">
+    <!-- Empty state -->
+    <div class="chat-empty" id="chat-empty">
+      <div class="empty-icon">💬</div>
+      <h3>Select a conversation</h3>
+      <p>Choose a contact or search for someone to chat with</p>
+    </div>
+
+      <!-- Active chat (hidden by default) -->
+      <div id="chat-window" style="display:none; flex-direction:column; height:100dvh; position:relative; overflow:hidden;">
+        <!-- Chat Header -->
+        <header class="chat-header">
+          <button class="icon-btn back-btn" id="back-btn">←</button>
+          <div class="avatar" id="chat-avatar" onclick="openUserProfile()"></div>
+          <div class="chat-user-info" onclick="openUserProfile()">
+            <div class="chat-username" id="chat-username">Username</div>
+            <div class="chat-status" id="chat-status">Loading...</div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn" id="user-search-in-chat-btn" title="Search user" onclick="openUserProfile()">ℹ️</button>
+          </div>
+        </header>
+
+        <!-- Messages Area -->
+        <div class="messages-container" id="messages-container"></div>
+
+        <!-- Input Area Fixed at Bottom -->
+        <footer class="chat-input-area">
+          <div class="reply-bar" id="reply-bar">
+            <div class="reply-bar-content">
+              <div class="reply-bar-name" id="reply-name">User</div>
+              <div id="reply-preview-text" style="font-size:0.82rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">Message</div>
+            </div>
+            <button class="reply-cancel" id="cancel-reply">✕</button>
+          </div>
+          <div class="input-row">
+            <button class="attach-btn" id="attach-btn" title="Attach file">📎</button>
+            <input type="file" id="file-input" accept="image/*,audio/*,video/*,application/pdf,text/plain" />
+            <button class="gif-btn" id="gif-btn" title="Send GIF">GIF</button>
+            <button class="emoji-btn" id="emoji-btn" title="Emoji">😊</button>
+            <div class="msg-input-wrap">
+              <textarea class="msg-input" id="msg-input" placeholder="Type a message..." rows="1" maxlength="2000"></textarea>
+            </div>
+            <button class="send-btn" id="send-btn" title="Send">➤</button>
+          </div>
+        </footer>
+      </div>
+
+      <!-- GIF Picker Modal -->
+      <div class="modal-picker" id="gif-picker">
+        <div class="picker-header">
+          <h3>Send GIF</h3>
+          <button class="icon-btn" onclick="toggleGifPicker()">✕</button>
+        </div>
+        <div class="gif-search-wrap" style="padding: 0.75rem;">
+          <input type="text" class="gif-search" id="gif-search" placeholder="Search GIFs..." style="width:100%; padding:0.6rem 1rem; border-radius:20px; border:1px solid var(--border); background:var(--input-bg); color:var(--text);" />
+        </div>
+        <div class="gif-grid" id="gif-grid">
+          <div class="gif-loading">Loading trending GIFs... 🎭</div>
+        </div>
+      </div>
+
+      <!-- Emoji Picker Modal -->
+      <div class="modal-picker" id="emoji-picker" style="max-height: 40vh;">
+        <div class="picker-header">
+          <h3>Emojis</h3>
+          <button class="icon-btn" onclick="toggleEmojiPicker()">✕</button>
+        </div>
+        <div class="emoji-grid" id="emoji-grid" style="padding: 1rem;"></div>
+      </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+
+<!-- Search Users Modal -->
+<div class="modal-overlay" id="search-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🔍 Find Users</h3>
+      <button class="modal-close" onclick="closeModal('search-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" class="search-modal-input" id="user-search-input" placeholder="Search by username, name, or ID..." />
+      <div class="search-results" id="search-results">
+        <p style="text-align:center;color:var(--text-muted);font-size:0.9rem;">Type to search users...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Profile View Modal -->
+<div class="modal-overlay" id="profile-view-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>👤 Profile</h3>
+      <button class="modal-close" onclick="closeModal('profile-view-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="profile-view-body" style="text-align:center">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+</div>
+
+<!-- Own Profile Edit Modal -->
+<div class="modal-overlay" id="own-profile-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit Profile</h3>
+      <button class="modal-close" onclick="closeModal('own-profile-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form class="profile-form" id="profile-form">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div class="profile-modal-avatar" id="edit-avatar-preview"></div>
+        </div>
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" id="edit-displayName" maxlength="50" required />
+        </div>
+        <div class="form-group">
+          <label>Avatar URL</label>
+          <input type="url" id="edit-avatar" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <textarea id="edit-bio" maxlength="200" placeholder="Tell something about yourself..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <input type="text" id="edit-status" maxlength="100" />
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="margin-bottom:0">🔔 Notification Sound</label>
+          <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+            <input type="checkbox" id="edit-notif" style="opacity:0;width:0;height:0;">
+            <span id="toggle-slider" style="position:absolute;inset:0;background:#cbd5e1;border-radius:24px;transition:background 0.2s;"></span>
+            <span id="toggle-knob" style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></span>
+          </label>
+        </div>
+        <button type="submit" class="btn-save">💾 Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="modal-overlay" id="image-modal">
+  <div class="modal" style="max-width:90vw;background:transparent;box-shadow:none;">
+    <div style="text-align:right;margin-bottom:0.5rem;">
+      <button onclick="closeModal('image-modal')" style="background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;color:white;font-size:1.1rem;">✕</button>
+    </div>
+    <img id="preview-img" src="" alt="Preview" style="max-width:100%;max-height:80vh;border-radius:12px;object-fit:contain;" />
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/chat.js"></script>
+</body>
+</html>

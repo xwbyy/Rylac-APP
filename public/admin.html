@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – Rylac App</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page" class="admin-login-page">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="font-size:2.5rem;margin-bottom:0.5rem;">⚙️</div>
+      <h1>Admin Panel</h1>
+      <p>Rylac App Administration</p>
+    </div>
+    <div id="login-error" class="alert alert-error" style="display:none"></div>
+    <form id="admin-login-form">
+      <div class="form-group">
+        <label>Admin Username</label>
+        <input type="text" id="admin-user" placeholder="admin" autocomplete="username" required />
+      </div>
+      <div class="form-group">
+        <label>Admin Password</label>
+        <input type="password" id="admin-pass" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn-primary">Sign In to Admin Panel →</button>
+    </form>
+    <p style="text-align:center;margin-top:1.5rem;font-size:0.85rem;color:#64748b;"><a href="/" style="color:#6366f1;text-decoration:none;">← Back to Rylac App</a></p>
+  </div>
+</div>
+
+<!-- ADMIN LAYOUT -->
+<div id="admin-layout" class="admin-layout" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">
+      <span>⚙️</span>
+      <div>
+        <div class="logo-name">Rylac</div>
+        <div class="admin-label">ADMIN</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="users" onclick="showPage('users')">
+        <span class="nav-icon">👥</span> Users
+      </div>
+      <div class="nav-item" data-page="messages" onclick="showPage('messages')">
+        <span class="nav-icon">💬</span> Messages
+      </div>
+      <div class="nav-item" data-page="config" onclick="showPage('config')">
+        <span class="nav-icon">⚙️</span> App Config
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="adminLogout()" class="btn btn-ghost" style="width:100%;justify-content:center;">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div class="page-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions">
+        <span style="font-size:0.85rem;color:#64748b;">Signed in as <strong>admin</strong></span>
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">🌐 View Site</a>
+      </div>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-icon">👥</div><div><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Users</div></div></div>
+          <div class="stat-card"><div class="stat-icon">🟢</div><div><div class="stat-value" id="stat-online">—</div><div class="stat-label">Online Now</div></div></div>
+          <div class="stat-card"><div class="stat-icon">💬</div><div><div class="stat-value" id="stat-messages">—</div><div class="stat-label">Total Messages</div></div></div>
+          <div class="stat-card"><div class="stat-icon">✨</div><div><div class="stat-value" id="stat-today">—</div><div class="stat-label">New Today</div></div></div>
+          <div class="stat-card"><div class="stat-icon">🚫</div><div><div class="stat-value" id="stat-suspended">—</div><div class="stat-label">Suspended</div></div></div>
+          <div class="stat-card"><div class="stat-icon">📅</div><div><div class="stat-value" id="stat-week">—</div><div class="stat-label">Active This Week</div></div></div>
+          <div class="stat-card"><div class="stat-icon">📨</div><div><div class="stat-value" id="stat-msg-today">—</div><div class="stat-label">Messages Today</div></div></div>
+          <div class="stat-card"><div class="stat-icon">✅</div><div><div class="stat-value" id="stat-active">—</div><div class="stat-label">Active Users</div></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🕐 Recent Activity</h3></div>
+          <div class="card-body">
+            <p style="color:#64748b;font-size:0.9rem;">System is running normally. All services operational.</p>
+            <div style="margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+              <div style="background:#f0fdf4;padding:1rem;border-radius:10px;border:1px solid #bbf7d0;">
+                <div style="color:#16a34a;font-weight:700;font-size:0.9rem;">✅ Database</div>
+                <div style="font-size:0.82rem;color:#64748b;margin-top:0.25rem;">Connected — MongoDB</div>
+              </div>
+              <div style="background:#f0fdf4;padding:1rem;border-radius:10px;border:1px solid #bbf7d0;">
+                <div style="color:#16a34a;font-weight:700;font-size:0.9rem;">✅ Socket.io</div>
+                <div style="font-size:0.82rem;color:#64748b;margin-top:0.25rem;">Real-time messaging active</div>
+              </div>
+              <div style="background:#f0fdf4;padding:1rem;border-radius:10px;border:1px solid #bbf7d0;">
+                <div style="color:#16a34a;font-weight:700;font-size:0.9rem;">✅ Auth</div>
+                <div style="font-size:0.82rem;color:#64748b;margin-top:0.25rem;">JWT + bcrypt active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS PAGE -->
+      <div id="page-users" style="display:none">
+        <div class="filter-bar">
+          <input type="text" class="search-bar-input" id="user-search" placeholder="🔍 Search by username, name or ID..." />
+          <select class="filter-select" id="user-filter" onchange="loadUsers()">
+            <option value="all">All Users</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="online">Online</option>
+          </select>
+          <button onclick="loadUsers()" class="btn btn-primary-sm">Refresh</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>👥 User Management</h3>
+            <span id="user-count" style="font-size:0.82rem;color:#64748b;"></span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>ID</th>
+                  <th>Status</th>
+                  <th>Online</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:#64748b;">Loading users...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="users-pagination"></div>
+        </div>
+      </div>
+
+      <!-- MESSAGES PAGE -->
+      <div id="page-messages" style="display:none">
+        <div class="filter-bar">
+          <input type="text" class="search-bar-input" id="msg-user-filter" placeholder="🔍 Filter by user ID..." />
+          <button onclick="loadMessages()" class="btn btn-primary-sm">Refresh</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>💬 Message Management</h3><span id="msg-count" style="font-size:0.82rem;color:#64748b;"></span></div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Content</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="messages-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">Loading messages...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="messages-pagination"></div>
+        </div>
+      </div>
+
+      <!-- CONFIG PAGE -->
+      <div id="page-config" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <h3>⚙️ App Configuration</h3>
+            <button onclick="loadConfig()" class="btn btn-ghost btn-sm">🔄 Refresh</button>
+          </div>
+          <div class="card-body">
+            <p style="font-size:0.85rem;color:#64748b;margin-bottom:1.5rem;">Click any setting to edit its value.</p>
+            <div id="config-list">
+              <div style="text-align:center;padding:2rem;color:#64748b;">Loading config...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+
+<!-- Suspend User Modal -->
+<div class="modal-overlay" id="suspend-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🚫 Suspend User</h3>
+      <button class="modal-close" onclick="closeModal('suspend-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:1rem;color:#64748b;font-size:0.9rem;">Enter a reason for suspension (optional):</p>
+      <input type="text" class="modal-input" id="suspend-reason" placeholder="Reason for suspension..." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('suspend-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmSuspend()">Suspend</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal-overlay" id="reset-pwd-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🔑 Reset Password</h3>
+      <button class="modal-close" onclick="closeModal('reset-pwd-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:1rem;color:#64748b;font-size:0.9rem;">Set a new password for this user:</p>
+      <input type="text" class="modal-input" id="new-user-pwd" placeholder="New password (min 6 chars)" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('reset-pwd-modal')">Cancel</button>
+      <button class="btn btn-warning" onclick="confirmResetPassword()">Reset Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Config Edit Modal -->
+<div class="modal-overlay" id="config-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit Config</h3>
+      <button class="modal-close" onclick="closeModal('config-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="modal-label" id="config-modal-key">Setting</label>
+      <p style="font-size:0.82rem;color:#64748b;margin-bottom:1rem;" id="config-modal-desc"></p>
+      <input type="text" class="modal-input" id="config-modal-value" placeholder="Value..." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('config-modal')">Cancel</button>
+      <button class="btn btn-primary-sm" onclick="confirmConfigUpdate()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+let currentActionUserId = null;
+let currentConfigKey = null;
+let usersPage = 1;
+let messagesPage = 1;
+
+// ============================================================
+// AUTH
+// ============================================================
+async function checkAdminAuth() {
+  try {
+    const res = await fetch('/api/admin/verify', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      showAdminLayout();
+    }
+  } catch {}
+}
+
+document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('admin-user').value;
+  const password = document.getElementById('admin-pass').value;
+
+  try {
+    const res = await fetch('/api/auth/admin-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAdminLayout();
+    } else {
+      document.getElementById('login-error').textContent = data.message;
+      document.getElementById('login-error').style.display = 'block';
+    }
+  } catch {
+    document.getElementById('login-error').textContent = 'Server error.';
+    document.getElementById('login-error').style.display = 'block';
+  }
+});
+
+function showAdminLayout() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('admin-layout').style.display = 'flex';
+  loadDashboard();
+}
+
+async function adminLogout() {
+  await fetch('/api/auth/admin-logout', { method: 'POST', credentials: 'include' });
+  location.reload();
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(page) {
+  const pages = ['dashboard', 'users', 'messages', 'config'];
+  pages.forEach(p => {
+    document.getElementById(`page-${p}`).style.display = p === page ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  const titles = { dashboard: 'Dashboard', users: 'User Management', messages: 'Message Management', config: 'App Configuration' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+
+  if (page === 'users') loadUsers();
+  if (page === 'messages') loadMessages();
+  if (page === 'config') loadConfig();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/admin/stats', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      const s = data.stats;
+      document.getElementById('stat-total').textContent = s.totalUsers;
+      document.getElementById('stat-online').textContent = s.onlineUsers;
+      document.getElementById('stat-messages').textContent = s.totalMessages;
+      document.getElementById('stat-today').textContent = s.newUsersToday;
+      document.getElementById('stat-suspended').textContent = s.suspendedUsers;
+      document.getElementById('stat-week').textContent = s.activeThisWeek;
+      document.getElementById('stat-msg-today').textContent = s.messagesToday;
+      document.getElementById('stat-active').textContent = s.activeUsers;
+    }
+  } catch {}
+}
+
+// ============================================================
+// USERS
+// ============================================================
+async function loadUsers() {
+  const search = document.getElementById('user-search').value;
+  const filter = document.getElementById('user-filter').value;
+
+  try {
+    const res = await fetch(`/api/admin/users?page=${usersPage}&limit=15&search=${encodeURIComponent(search)}&filter=${filter}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) return;
+
+    document.getElementById('user-count').textContent = `${data.pagination.total} total`;
+    const tbody = document.getElementById('users-table-body');
+    
+    if (!data.users.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#64748b;">No users found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.users.map(u => `
+      <tr>
+        <td>
+          <div class="user-info-cell">
+            <div class="table-avatar">
+              ${u.avatar ? `<img src="${u.avatar}" alt="" onerror="this.parentElement.textContent='${u.displayName[0]}'">` : u.displayName[0].toUpperCase()}
+            </div>
+            <div>
+              <div class="user-name-cell">${escHtml(u.displayName)}</div>
+              <div class="user-sub-cell">@${escHtml(u.username)}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-family:monospace;font-size:0.8rem;color:#64748b;">${u.userId}</td>
+        <td>
+          ${u.isSuspended 
+            ? `<span class="badge badge-red">🚫 Suspended</span>` 
+            : `<span class="badge badge-green">✅ Active</span>`}
+        </td>
+        <td>
+          ${u.isOnline 
+            ? `<span class="badge badge-green">🟢 Online</span>`
+            : `<span class="badge badge-gray">⚫ Offline</span>`}
+        </td>
+        <td style="font-size:0.82rem;color:#64748b;">${new Date(u.createdAt).toLocaleDateString()}</td>
+        <td>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            ${u.isSuspended
+              ? `<button class="btn btn-success btn-sm" onclick="activateUser('${u.userId}')">✅ Activate</button>`
+              : `<button class="btn btn-warning btn-sm" onclick="openSuspendModal('${u.userId}')">🚫 Suspend</button>`
+            }
+            <button class="btn btn-ghost btn-sm" onclick="openResetPwdModal('${u.userId}')">🔑 Reset Pwd</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.userId}', '${escHtml(u.displayName)}')">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    renderPagination('users', data.pagination.total, data.pagination.limit || 15, usersPage);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+let userSearchTimer;
+document.getElementById('user-search').addEventListener('input', () => {
+  clearTimeout(userSearchTimer);
+  userSearchTimer = setTimeout(() => { usersPage = 1; loadUsers(); }, 400);
+});
+
+function openSuspendModal(userId) {
+  currentActionUserId = userId;
+  document.getElementById('suspend-reason').value = '';
+  openModal('suspend-modal');
+}
+
+async function confirmSuspend() {
+  const reason = document.getElementById('suspend-reason').value;
+  try {
+    const res = await fetch(`/api/admin/users/${currentActionUserId}/suspend`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (data.success) { showToast('User suspended.', 'success'); closeModal('suspend-modal'); loadUsers(); }
+    else showToast(data.message, 'error');
+  } catch { showToast('Failed.', 'error'); }
+}
+
+async function activateUser(userId) {
+  try {
+    const res = await fetch(`/api/admin/users/${userId}/activate`, { method: 'PUT', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) { showToast('User activated!', 'success'); loadUsers(); }
+    else showToast(data.message, 'error');
+  } catch { showToast('Failed.', 'error'); }
+}
+
+function openResetPwdModal(userId) {
+  currentActionUserId = userId;
+  document.getElementById('new-user-pwd').value = '';
+  openModal('reset-pwd-modal');
+}
+
+async function confirmResetPassword() {
+  const newPassword = document.getElementById('new-user-pwd').value;
+  if (!newPassword || newPassword.length < 6) { showToast('Password too short.', 'error'); return; }
+  try {
+    const res = await fetch(`/api/admin/users/${currentActionUserId}/reset-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ newPassword }),
+    });
+    const data = await res.json();
+    if (data.success) { showToast('Password reset!', 'success'); closeModal('reset-pwd-modal'); }
+    else showToast(data.message, 'error');
+  } catch { showToast('Failed.', 'error'); }
+}
+
+async function deleteUser(userId, name) {
+  if (!confirm(`Delete user "${name}"? This will also delete all their messages. This action cannot be undone.`)) return;
+  try {
+    const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) { showToast('User deleted.', 'success'); loadUsers(); }
+    else showToast(data.message, 'error');
+  } catch { showToast('Failed.', 'error'); }
+}
+
+// ============================================================
+// MESSAGES
+// ============================================================
+async function loadMessages() {
+  const userId = document.getElementById('msg-user-filter').value.trim();
+  try {
+    const res = await fetch(`/api/admin/messages?page=${messagesPage}&limit=20${userId ? '&userId=' + userId : ''}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) return;
+
+    document.getElementById('msg-count').textContent = `${data.pagination.total} total`;
+    const tbody = document.getElementById('messages-table-body');
+
+    if (!data.messages.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">No messages found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.messages.map(m => `
+      <tr>
+        <td style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">${m.messageId.substring(0, 8)}...</td>
+        <td style="font-size:0.82rem;">${m.senderId}</td>
+        <td style="font-size:0.82rem;">${m.receiverId}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85rem;">
+          ${m.isDeleted ? '<em style="color:#94a3b8">[deleted]</em>' : escHtml((m.content || '').substring(0, 60))}
+        </td>
+        <td><span class="badge badge-blue">${m.type}</span></td>
+        <td style="font-size:0.78rem;color:#64748b;">${new Date(m.createdAt).toLocaleString()}</td>
+        <td>
+          ${!m.isDeleted ? `<button class="btn btn-danger btn-sm" onclick="adminDeleteMsg('${m.messageId}')">🗑️ Delete</button>` : '<span style="color:#94a3b8;font-size:0.8rem">Deleted</span>'}
+        </td>
+      </tr>
+    `).join('');
+
+    renderPagination('messages', data.pagination.total, 20, messagesPage);
+  } catch {}
+}
+
+async function adminDeleteMsg(messageId) {
+  if (!confirm('Delete this message for everyone?')) return;
+  try {
+    const res = await fetch(`/api/admin/messages/${messageId}`, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) { showToast('Message deleted.', 'success'); loadMessages(); }
+    else showToast(data.message, 'error');
+  } catch { showToast('Failed.', 'error'); }
+}
+
+// ============================================================
+// CONFIG
+// ============================================================
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/admin/config', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const list = document.getElementById('config-list');
+    list.innerHTML = data.configs.map(c => `
+      <div class="config-row">
+        <div class="config-key">${c.key}</div>
+        <div class="config-desc">${c.description || ''}</div>
+        <div class="config-val">${JSON.stringify(c.value)}</div>
+        <button class="btn btn-ghost btn-sm" onclick="openConfigEdit('${c.key}', ${JSON.stringify(JSON.stringify(c.value))}, '${escHtml(c.description || '')}')">✏️ Edit</button>
+      </div>
+    `).join('') || '<p style="color:#64748b;text-align:center;">No config found.</p>';
+  } catch {}
+}
+
+function openConfigEdit(key, valueStr, desc) {
+  currentConfigKey = key;
+  document.getElementById('config-modal-key').textContent = key;
+  document.getElementById('config-modal-desc').textContent = desc;
+  document.getElementById('config-modal-value').value = JSON.parse(valueStr);
+  openModal('config-modal');
+}
+
+async function confirmConfigUpdate() {
+  const rawValue = document.getElementById('config-modal-value').value;
+  let value;
+  try {
+    value = JSON.parse(rawValue);
+  } catch {
+    value = rawValue; // treat as string
+  }
+  try {
+    const res = await fetch(`/api/admin/config/${currentConfigKey}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ value }),
+    });
+    const data = await res.json();
+    if (data.success) { showToast('Config updated!', 'success'); closeModal('config-modal'); loadConfig(); }
+    else showToast(data.message, 'error');
+  } catch { showToast('Failed.', 'error'); }
+}
+
+// ============================================================
+// PAGINATION
+// ============================================================
+function renderPagination(type, total, limit, currentPage) {
+  const totalPages = Math.ceil(total / limit);
+  const container = document.getElementById(`${type}-pagination`);
+  if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+  const pages = [];
+  for (let i = 1; i <= Math.min(totalPages, 7); i++) pages.push(i);
+
+  container.innerHTML = `
+    <button class="page-btn" onclick="changePage('${type}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.4"' : ''}>←</button>
+    ${pages.map(p => `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="changePage('${type}', ${p})">${p}</button>`).join('')}
+    <button class="page-btn" onclick="changePage('${type}', ${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.4"' : ''}>→</button>
+    <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+  `;
+}
+
+function changePage(type, page) {
+  if (page < 1) return;
+  if (type === 'users') { usersPage = page; loadUsers(); }
+  if (type === 'messages') { messagesPage = page; loadMessages(); }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = { info: 'ℹ️', success: '✅', error: '❌' };
+  toast.innerHTML = `<span>${icons[type]}</span><span>${escHtml(msg)}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
+});
+
+// Init
+checkAdminAuth();
+</script>
+</body>
+</html>
