@@ -124,9 +124,17 @@ const onlineUsers = new Map();
 // Authenticate socket connections
 io.use(async (socket, next) => {
   try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.cookie
-      ?.split(';').find(c => c.trim().startsWith('accessToken='))
-      ?.split('=')[1];
+    const cookieHeader = socket.handshake.headers.cookie;
+    let token = socket.handshake.auth.token;
+
+    if (!token && cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      token = cookies.accessToken;
+    }
 
     if (!token) return next(new Error('Authentication required'));
 
