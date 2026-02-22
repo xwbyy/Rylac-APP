@@ -12,7 +12,6 @@ const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 
 const config = require('./config');
 const User = require('./models/User');
@@ -27,44 +26,16 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const server = http.createServer(app);
 
-// ============================================================
-// CORS FIX (PRODUCTION SAFE)
-// ============================================================
-
-// Pastikan CORS_ORIGINS selalu array
-let allowedOrigins = [];
-
-if (Array.isArray(config.CORS_ORIGINS)) {
-  allowedOrigins = config.CORS_ORIGINS;
-} else if (typeof config.CORS_ORIGINS === 'string') {
-  allowedOrigins = config.CORS_ORIGINS.split(',').map(o => o.trim());
-}
-
-console.log('🌍 Allowed CORS Origins:', allowedOrigins);
-
-// ============================================================
-// SOCKET.IO SETUP
-// ============================================================
-
+// Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (
-        !origin ||
-        config.NODE_ENV !== 'production' ||
-        allowedOrigins.includes(origin)
-      ) {
-        callback(null, true);
-      } else {
-        console.error('❌ Socket CORS Blocked:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: config.CORS_ORIGINS,
     credentials: true,
   },
-  maxHttpBufferSize: 1e6,
+  maxHttpBufferSize: 1e6, // 1MB
 });
 
+// Store io instance for use in routes
 app.set('io', io);
 
 // ============================================================
@@ -75,14 +46,9 @@ app.set('trust proxy', 1);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (
-      !origin ||
-      config.NODE_ENV !== 'production' ||
-      allowedOrigins.includes(origin)
-    ) {
+    if (!origin || config.CORS_ORIGINS.includes(origin) || config.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
-      console.error('❌ HTTP CORS Blocked:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -93,10 +59,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser(config.COOKIE_SECRET));
 
-// ============================================================
-// RATE LIMITER
-// ============================================================
-
+// General rate limiter
 app.use('/api/', rateLimit({
   windowMs: config.GENERAL_RATE_LIMIT_WINDOW,
   max: config.GENERAL_RATE_LIMIT_MAX,
@@ -104,13 +67,15 @@ app.use('/api/', rateLimit({
   skip: (req) => req.path.startsWith('/api/auth/refresh'),
 }));
 
-// ============================================================
-// STATIC FILES
-// ============================================================
-
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Fallback for CSS/JS if not found in public
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
+
+// Set up for Replit
+app.set('trust proxy', 1);
 
 // ============================================================
 // API ROUTES
@@ -121,10 +86,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/admin', adminRoutes);
 
-// ============================================================
-// HEALTH CHECK
-// ============================================================
-
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -135,57 +97,49 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ============================================================
-// SEO FILES
-// ============================================================
-
+// Sitemap
 app.get('/sitemap.xml', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
+// Robots
 app.get('/robots.txt', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
 });
 
-// ============================================================
-// SPA ROUTES
-// ============================================================
-
+// Serve SPA pages
 const pages = ['login', 'register', 'chat', 'profile', 'admin'];
-
 pages.forEach(page => {
   app.get(`/${page}`, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', `${page}.html`));
   });
 });
 
+// Catch-all -> index
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ============================================================
-// SOCKET.IO LOGIC
+// SOCKET.IO - REAL-TIME COMMUNICATION
 // ============================================================
 
+// Online users map: userId -> Set of socketIds
 const onlineUsers = new Map();
 
+// Authenticate socket connections
 io.use(async (socket, next) => {
   try {
-    const token =
-      socket.handshake.auth.token ||
-      socket.handshake.headers.cookie
-        ?.split(';')
-        .find(c => c.trim().startsWith('accessToken='))
-        ?.split('=')[1];
+    const token = socket.handshake.auth.token || socket.handshake.headers.cookie
+      ?.split(';').find(c => c.trim().startsWith('accessToken='))
+      ?.split('=')[1];
 
     if (!token) return next(new Error('Authentication required'));
 
     const decoded = jwt.verify(token, config.JWT_ACCESS_SECRET);
-    const user = await User.findOne({ userId: decoded.userId })
-      .select('-password -refreshTokens');
+    const user = await User.findOne({ userId: decoded.userId }).select('-password -refreshTokens');
 
-    if (!user || user.isSuspended)
-      return next(new Error('Unauthorized'));
+    if (!user || user.isSuspended) return next(new Error('Unauthorized'));
 
     socket.userId = user.userId;
     socket.user = user;
@@ -197,87 +151,71 @@ io.use(async (socket, next) => {
 
 io.on('connection', async (socket) => {
   const userId = socket.userId;
-  console.log(`✅ User connected: ${userId}`);
+  console.log(`✅ User connected: ${userId} (${socket.id})`);
 
+  // Join personal room for direct messages
   socket.join(userId);
 
+  // Track online users
   if (!onlineUsers.has(userId)) {
     onlineUsers.set(userId, new Set());
   }
-
   onlineUsers.get(userId).add(socket.id);
 
-  await User.updateOne(
-    { userId },
-    { $set: { isOnline: true, lastSeen: new Date() } }
-  );
-
+  // Update user online status
+  await User.updateOne({ userId }, { $set: { isOnline: true, lastSeen: new Date() } });
   io.emit('userStatus', { userId, isOnline: true });
 
+  // Handle typing indicator
   socket.on('typing', ({ receiverId, isTyping }) => {
-    socket.to(receiverId).emit('typing', {
-      senderId: userId,
-      isTyping
-    });
+    socket.to(receiverId).emit('typing', { senderId: userId, isTyping });
   });
 
+  // Handle message read receipt
   socket.on('markRead', async ({ senderId }) => {
     try {
-      const conversationId =
-        Message.getConversationId(userId, senderId);
-
+      const conversationId = Message.getConversationId(userId, senderId);
       await Message.updateMany(
         { conversationId, receiverId: userId, isRead: false },
         { $set: { isRead: true } }
       );
-
-      socket.to(senderId).emit('messagesRead', {
-        readBy: userId
-      });
+      socket.to(senderId).emit('messagesRead', { readBy: userId });
     } catch (err) {
       console.error('Mark read error:', err);
     }
   });
 
+  // Handle disconnect
   socket.on('disconnect', async () => {
+    console.log(`❌ User disconnected: ${userId} (${socket.id})`);
+
     if (onlineUsers.has(userId)) {
       onlineUsers.get(userId).delete(socket.id);
-
       if (onlineUsers.get(userId).size === 0) {
         onlineUsers.delete(userId);
-
-        await User.updateOne(
-          { userId },
-          { $set: { isOnline: false, lastSeen: new Date() } }
-        );
-
-        io.emit('userStatus', {
-          userId,
-          isOnline: false,
-          lastSeen: new Date()
-        });
+        // Update offline status
+        await User.updateOne({ userId }, { $set: { isOnline: false, lastSeen: new Date() } });
+        io.emit('userStatus', { userId, isOnline: false, lastSeen: new Date() });
       }
     }
   });
 });
 
 // ============================================================
-// DATABASE & SERVER START
+// DATABASE CONNECTION & SERVER START
 // ============================================================
 
 async function initializeApp() {
   try {
     console.log('🔌 Connecting to MongoDB...');
-
     await mongoose.connect(config.MONGODB_URI, {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
     });
-
     console.log('✅ MongoDB connected successfully!');
 
+    // Initialize default configs
     const defaults = AppConfig.getDefaults();
-
     for (const def of defaults) {
       await AppConfig.findOneAndUpdate(
         { key: def.key },
@@ -285,20 +223,13 @@ async function initializeApp() {
         { upsert: true }
       );
     }
-
     console.log('✅ App config initialized');
 
-    const adminExists = await User.findOne({
-      userId: config.ADMIN_ID
-    });
-
+    // Create admin user if not exists
+    const adminExists = await User.findOne({ userId: config.ADMIN_ID });
     if (!adminExists) {
       const salt = await bcrypt.genSalt(12);
-      const hashedPwd = await bcrypt.hash(
-        config.ADMIN_PASSWORD,
-        salt
-      );
-
+      const hashedPwd = await bcrypt.hash(config.ADMIN_PASSWORD, salt);
       await User.create({
         userId: config.ADMIN_ID,
         username: config.ADMIN_USERNAME,
@@ -306,22 +237,23 @@ async function initializeApp() {
         password: hashedPwd,
         isAdmin: true,
         status: 'Official Rylac Support',
-        avatar:
-          'https://ui-avatars.com/api/?name=Rylac+Admin&background=6366f1&color=fff&size=200',
+        avatar: 'https://ui-avatars.com/api/?name=Rylac+Admin&background=6366f1&color=fff&size=200',
       });
-
-      console.log('✅ Admin user created');
+      console.log('✅ Admin user created (ID: 268268)');
     }
 
     server.listen(config.PORT, () => {
-      console.log(`🚀 Rylac App running on port ${config.PORT}`);
+      console.log(`🚀 Rylac App running on http://localhost:${config.PORT}`);
+      console.log(`📊 Admin panel: http://localhost:${config.PORT}/admin`);
       console.log(`🌍 Environment: ${config.NODE_ENV}`);
     });
-
   } catch (err) {
     console.error('❌ Startup error:', err);
   }
 }
+
+// Need bcrypt for admin user creation
+const bcrypt = require('bcryptjs');
 
 initializeApp();
 
