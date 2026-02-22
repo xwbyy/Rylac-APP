@@ -37,6 +37,7 @@ const config = {
     'https://rylac-app.vercel.app',
     'http://localhost:3000',
     'http://localhost:5000',
+    'http://0.0.0.0:5000',
   ],
 
 };

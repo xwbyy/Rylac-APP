@@ -7,7 +7,7 @@ const config = require('../config');
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
-// Rate limiter for login
+// Rate limiter for login/register
 const loginLimiter = rateLimit({
   windowMs: config.LOGIN_RATE_LIMIT_WINDOW,
   max: config.LOGIN_RATE_LIMIT_MAX,
