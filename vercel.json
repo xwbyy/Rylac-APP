@@ -16,24 +16,7 @@
       "dest": "server.js"
     },
     {
-      "src": "/css/(.*)",
-      "dest": "public/css/$1"
-    },
-    {
-      "src": "/js/(.*)",
-      "dest": "public/js/$1"
-    },
-    {
       "src": "/(login|register|chat|profile|admin)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "public/$1",
-      "continue": true
-    },
-    {
-      "src": "/(.*)",
       "dest": "server.js"
     }
   ]
