@@ -16,23 +16,15 @@
       "dest": "server.js"
     },
     {
-      "src": "/chat",
-      "dest": "server.js"
+      "src": "/css/(.*)",
+      "dest": "public/css/$1"
     },
     {
-      "src": "/login",
-      "dest": "server.js"
+      "src": "/js/(.*)",
+      "dest": "public/js/$1"
     },
     {
-      "src": "/register",
-      "dest": "server.js"
-    },
-    {
-      "src": "/profile",
-      "dest": "server.js"
-    },
-    {
-      "src": "/admin",
+      "src": "/(login|register|chat|profile|admin)",
       "dest": "server.js"
     },
     {
@@ -42,7 +34,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "public/index.html"
+      "dest": "server.js"
     }
   ]
 }
