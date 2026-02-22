@@ -151,7 +151,7 @@ router.get('/profile/me', authenticateToken, async (req, res) => {
 // GET /api/users/contacts/list - Get user's recent contacts
 router.get('/contacts/list', authenticateToken, async (req, res) => {
   try {
-    const currentUser = await User.findOne({ userId: req.user.userId });
+    const user = await User.findOne({ userId: req.user.userId });
     const Message = require('../models/Message');
 
     // Get all unique conversation partners
@@ -162,7 +162,76 @@ router.get('/contacts/list', authenticateToken, async (req, res) => {
     const contacts = await User.find({ userId: { $in: allContactIds } })
       .select('userId username displayName avatar status isOnline lastSeen');
 
-    res.json({ success: true, contacts });
+    // Add pin status
+    const pinnedIds = user.pinnedChats || [];
+    const formattedContacts = contacts.map(c => ({
+      ...c.toObject(),
+      isPinned: pinnedIds.includes(c.userId)
+    })).sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
+
+    res.json({ success: true, contacts: formattedContacts });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/users/block/:userId - Block a user
+router.post('/block/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (userId === req.user.userId) return res.status(400).json({ success: false, message: 'Cannot block yourself.' });
+
+    await User.updateOne(
+      { userId: req.user.userId },
+      { $addToSet: { blockedUsers: userId } }
+    );
+    res.json({ success: true, message: 'User blocked.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/users/unblock/:userId - Unblock a user
+router.post('/unblock/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await User.updateOne(
+      { userId: req.user.userId },
+      { $pull: { blockedUsers: userId } }
+    );
+    res.json({ success: true, message: 'User unblocked.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/users/pin/:userId - Pin a chat
+router.post('/pin/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await User.updateOne(
+      { userId: req.user.userId },
+      { $addToSet: { pinnedChats: userId } }
+    );
+    res.json({ success: true, message: 'Chat pinned.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/users/unpin/:userId - Unpin a chat
+router.post('/unpin/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await User.updateOne(
+      { userId: req.user.userId },
+      { $pull: { pinnedChats: userId } }
+    );
+    res.json({ success: true, message: 'Chat unpinned.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }

@@ -28,6 +28,17 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     const { userId } = req.params;
     const { page = 1, limit = 50 } = req.query;
 
+    // Check if blocked
+    const currentUser = await User.findOne({ userId: req.user.userId });
+    if (currentUser.blockedUsers.includes(userId)) {
+      return res.status(403).json({ success: false, message: 'You have blocked this user.' });
+    }
+
+    const otherUserRecord = await User.findOne({ userId });
+    if (otherUserRecord && otherUserRecord.blockedUsers.includes(req.user.userId)) {
+      return res.status(403).json({ success: false, message: 'You are blocked by this user.' });
+    }
+
     // Verify other user exists
     const otherUser = await User.findOne({ userId }).select('userId username displayName avatar isOnline lastSeen status');
     if (!otherUser) {
@@ -82,6 +93,15 @@ router.post('/send', authenticateToken, async (req, res) => {
     const receiver = await User.findOne({ userId: receiverId });
     if (!receiver) {
       return res.status(404).json({ success: false, message: 'Receiver not found.' });
+    }
+
+    // Check block status
+    const currentUser = await User.findOne({ userId: req.user.userId });
+    if (currentUser.blockedUsers.includes(receiverId)) {
+      return res.status(403).json({ success: false, message: 'Unblock this user to send messages.' });
+    }
+    if (receiver.blockedUsers.includes(req.user.userId)) {
+      return res.status(403).json({ success: false, message: 'You cannot send messages to this user.' });
     }
 
     if (type === 'text' && (!content || !content.trim())) {
@@ -241,6 +261,25 @@ router.delete('/:messageId', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Message deleted.' });
   } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// DELETE /api/messages/conversation/:userId - Clear or delete conversation
+router.delete('/conversation/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const conversationId = Message.getConversationId(req.user.userId, userId);
+
+    // Instead of deleting from DB, we add currentUser to deletedBy array for all messages
+    await Message.updateMany(
+      { conversationId, deletedBy: { $ne: req.user.userId } },
+      { $push: { deletedBy: req.user.userId } }
+    );
+
+    res.json({ success: true, message: 'Conversation cleared.' });
+  } catch (err) {
+    console.error('Clear conversation error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });

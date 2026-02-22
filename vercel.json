@@ -16,29 +16,29 @@
       "dest": "server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "public/$1",
-      "continue": true
-    },
-    {
       "src": "/chat",
-      "dest": "public/chat.html"
+      "dest": "server.js"
     },
     {
       "src": "/login",
-      "dest": "public/login.html"
+      "dest": "server.js"
     },
     {
       "src": "/register",
-      "dest": "public/register.html"
+      "dest": "server.js"
     },
     {
       "src": "/profile",
-      "dest": "public/profile.html"
+      "dest": "server.js"
     },
     {
       "src": "/admin",
-      "dest": "public/admin.html"
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "public/$1",
+      "continue": true
     },
     {
       "src": "/(.*)",

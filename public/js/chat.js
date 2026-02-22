@@ -271,7 +271,7 @@ function renderContacts(list) {
   }
 
   container.innerHTML = list.map(c => `
-    <div class="contact-item ${currentChat?.userId === c.userId ? 'active' : ''}" 
+    <div class="contact-item ${currentChat?.userId === c.userId ? 'active' : ''} ${c.isPinned ? 'pinned' : ''}" 
          data-uid="${c.userId}" onclick="openChatWith('${c.userId}')">
       <div class="avatar-wrap">
         <div class="avatar" id="contact-avatar-${c.userId}">
@@ -280,7 +280,7 @@ function renderContacts(list) {
         <div class="online-dot ${c.isOnline ? 'online' : ''}" id="dot-${c.userId}"></div>
       </div>
       <div class="contact-info">
-        <div class="contact-name">${escHtml(c.displayName)}</div>
+        <div class="contact-name">${escHtml(c.displayName)} ${c.isPinned ? '<span class="pin-icon">📌</span>' : ''}</div>
         <div class="contact-preview" id="preview-${c.userId}">@${escHtml(c.username)}</div>
       </div>
       <div class="contact-meta">
@@ -425,6 +425,79 @@ function updateChatHeader() {
   const statusEl = document.getElementById('chat-status');
   statusEl.textContent = getChatStatusText();
   statusEl.className = 'chat-status';
+
+  // Update button states
+  const pinBtn = document.getElementById('pin-chat-btn');
+  if (pinBtn) {
+    const isPinned = allContacts.find(c => c.userId === currentChat.userId)?.isPinned;
+    pinBtn.textContent = isPinned ? '📍' : '📌';
+    pinBtn.title = isPinned ? 'Unpin Chat' : 'Pin Chat';
+  }
+
+  const blockBtn = document.getElementById('block-user-btn');
+  if (blockBtn) {
+    const isBlocked = currentUser.blockedUsers?.includes(currentChat.userId);
+    blockBtn.textContent = isBlocked ? '✅' : '🚫';
+    blockBtn.title = isBlocked ? 'Unblock User' : 'Block User';
+  }
+}
+
+async function togglePinChat() {
+  if (!currentChat) return;
+  const isPinned = allContacts.find(c => c.userId === currentChat.userId)?.isPinned;
+  const action = isPinned ? 'unpin' : 'pin';
+  try {
+    const res = await fetch(`/api/users/${action}/${currentChat.userId}`, { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      await loadContacts();
+      updateChatHeader();
+    }
+  } catch (err) {
+    showToast('Failed to toggle pin.', 'error');
+  }
+}
+
+async function toggleBlockUser() {
+  if (!currentChat) return;
+  const isBlocked = currentUser.blockedUsers?.includes(currentChat.userId);
+  const action = isBlocked ? 'unblock' : 'block';
+  if (!isBlocked && !confirm(`Are you sure you want to block ${currentChat.displayName}?`)) return;
+
+  try {
+    const res = await fetch(`/api/users/${action}/${currentChat.userId}`, { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      // Update local state
+      if (action === 'block') {
+        if (!currentUser.blockedUsers) currentUser.blockedUsers = [];
+        currentUser.blockedUsers.push(currentChat.userId);
+      } else {
+        currentUser.blockedUsers = currentUser.blockedUsers.filter(id => id !== currentChat.userId);
+      }
+      updateChatHeader();
+    }
+  } catch (err) {
+    showToast('Failed to toggle block.', 'error');
+  }
+}
+
+async function clearConversation() {
+  if (!currentChat) return;
+  if (!confirm('Are you sure you want to clear this conversation? This cannot be undone.')) return;
+
+  try {
+    const res = await fetch(`/api/messages/conversation/${currentChat.userId}`, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      document.getElementById('messages-container').innerHTML = '';
+    }
+  } catch (err) {
+    showToast('Failed to clear conversation.', 'error');
+  }
 }
 
 function getChatStatusText() {
@@ -1088,6 +1161,16 @@ function setupEventListeners() {
   // Theme toggle
   const themeBtn = document.getElementById('theme-btn');
   if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+  // Additional features
+  const pinBtn = document.getElementById('pin-chat-btn');
+  if (pinBtn) pinBtn.onclick = togglePinChat;
+  
+  const blockBtn = document.getElementById('block-user-btn');
+  if (blockBtn) blockBtn.onclick = toggleBlockUser;
+  
+  const clearBtn = document.getElementById('clear-chat-btn');
+  if (clearBtn) clearBtn.onclick = clearConversation;
 
   // Logout
   const logoutBtn = document.getElementById('logout-btn');

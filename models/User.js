@@ -85,6 +85,12 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  blockedUsers: [{
+    type: String, // userId
+  }],
+  pinnedChats: [{
+    type: String, // userId
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
