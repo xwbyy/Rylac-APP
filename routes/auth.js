@@ -63,7 +63,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('refreshToken', refreshToken, {
     ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: '/api/auth/refresh',
+    path: '/', // Changed from /api/auth/refresh to / for better compatibility
   });
 }
 

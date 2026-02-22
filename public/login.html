@@ -11,6 +11,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
   <script defer src="/_vercel/insights/script.js"></script>
   <link rel="stylesheet" href="/css/auth.css">
+  <script src="/js/auth.js"></script>
 </head>
 <body>
   <div class="auth-page">
@@ -83,11 +84,8 @@
   </div>
 
   <script>
-    // Check if already logged in
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => { if (d.success) window.location.href = '/chat'; })
-      .catch(() => {});
+    // Use the Auth utility
+    Auth.redirectIfLoggedIn();
 
     const form = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
@@ -139,12 +137,15 @@
 
         if (data.success) {
           showSuccess('Login successful! Redirecting...');
-          setTimeout(() => { window.location.href = '/chat'; }, 800);
+          setTimeout(() => { 
+            window.location.replace('/chat'); 
+          }, 500);
         } else {
           showError(data.message || 'Login failed.');
           setLoading(false);
         }
-      } catch {
+      } catch (err) {
+        console.error('Login error:', err);
         showError('Network error. Please try again.');
         setLoading(false);
       }

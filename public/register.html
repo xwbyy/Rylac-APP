@@ -11,6 +11,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
   <script defer src="/_vercel/insights/script.js"></script>
   <link rel="stylesheet" href="/css/auth.css">
+  <script src="/js/auth.js"></script>
 </head>
 <body>
   <div class="auth-page">
@@ -107,10 +108,8 @@
   </div>
 
   <script>
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => { if (d.success) window.location.href = '/chat'; })
-      .catch(() => {});
+    // Use the Auth utility
+    Auth.redirectIfLoggedIn();
 
     const errorMsg = document.getElementById('error-msg');
     const successMsg = document.getElementById('success-msg');
@@ -210,12 +209,16 @@
         const data = await res.json();
         if (data.success) {
           showSuccess(`Account created! Your ID: ${data.user.userId}. Redirecting...`);
-          setTimeout(() => { window.location.href = '/chat'; }, 1500);
+          // Ensure cookies are set before redirecting
+          setTimeout(() => { 
+            window.location.replace('/chat'); 
+          }, 500);
         } else {
           showError(data.message || 'Registration failed.');
           setLoading(false);
         }
-      } catch {
+      } catch (err) {
+        console.error('Registration error:', err);
         showError('Network error. Please try again.');
         setLoading(false);
       }
