@@ -1,78 +1,43 @@
-// ============================================================
-// RYLAC APP - CONFIGURATION FILE
-// Production Ready (No .env needed)
-// ============================================================
-
 const config = {
 
-  // ============================================================
-  // SERVER
-  // ============================================================
-  PORT: 5000,
-  NODE_ENV: 'production', // PAKSA PRODUCTION
+  PORT: parseInt(process.env.PORT || '5000', 10),
+  HOST: process.env.HOST || '0.0.0.0',
+  NODE_ENV: process.env.NODE_ENV || 'production',
 
-  // ============================================================
-  // MONGODB
-  // ============================================================
-  MONGODB_URI:
-    'mongodb+srv://Vercel-Admin-rylac:0jKpyRiBlKdYfVed@rylac.iiqlafl.mongodb.net/rylac?retryWrites=true&w=majority',
+  MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://Vercel-Admin-rylac:0jKpyRiBlKdYfVed@rylac.iiqlafl.mongodb.net/rylac?retryWrites=true&w=majority',
 
-  // ============================================================
-  // JWT
-  // ============================================================
-  JWT_ACCESS_SECRET: 'rylac_access_secret_key_2024_xK9mP3qL8nR5vT2w',
-  JWT_REFRESH_SECRET: 'rylac_refresh_secret_key_2024_yH7jN4sM6uQ1xZ9c',
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || 'rylac_access_secret_key_2024_xK9mP3qL8nR5vT2w',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'rylac_refresh_secret_key_2024_yH7jN4sM6uQ1xZ9c',
   JWT_ACCESS_EXPIRES: '15m',
   JWT_REFRESH_EXPIRES: '7d',
 
-  // ============================================================
-  // COOKIE
-  // ============================================================
-  COOKIE_SECRET: 'rylac_cookie_secret_2024_aB3dE6fG9hI2jK5l',
+  COOKIE_SECRET: process.env.COOKIE_SECRET || 'rylac_cookie_secret_2024_aB3dE6fG9hI2jK5l',
 
-  // ============================================================
-  // ADMIN DEFAULT
-  // ============================================================
-  ADMIN_USERNAME: 'admin',
-  ADMIN_PASSWORD: 'admin123',
-  ADMIN_ID: '268268',
+  ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin123',
+  ADMIN_ID: process.env.ADMIN_ID || '268268',
 
-  // ============================================================
-  // GIPHY
-  // ============================================================
-  GIPHY_API_KEY: 'GlVGYHkr3WSBnllca54iNt0yFbjz7L65',
+  GIPHY_API_KEY: process.env.GIPHY_API_KEY || 'GlVGYHkr3WSBnllca54iNt0yFbjz7L65',
   GIPHY_BASE_URL: 'https://api.giphy.com/v1',
 
-  // ============================================================
-  // FILE UPLOAD
-  // ============================================================
-  MAX_FILE_SIZE: 1 * 1024 * 1024, // 1MB
+  MAX_FILE_SIZE: 1 * 1024 * 1024,
 
-  // ============================================================
-  // RATE LIMITING
-  // ============================================================
   LOGIN_RATE_LIMIT_WINDOW: 15 * 60 * 1000,
   LOGIN_RATE_LIMIT_MAX: 5,
   GENERAL_RATE_LIMIT_WINDOW: 15 * 60 * 1000,
   GENERAL_RATE_LIMIT_MAX: 100,
 
-  // ============================================================
-  // APP INFO
-  // ============================================================
   APP_NAME: 'Rylac App',
-  APP_URL: 'https://rylac.my.id',
-  APP_DESCRIPTION:
-    'Rylac - Modern Real-time Chat Application.',
+  APP_URL: process.env.APP_URL || 'https://rylac.my.id',
+  APP_DESCRIPTION: 'Rylac - Modern Real-time Chat Application.',
   SUPPORT_ADMIN_ID: '268268',
 
-  // ============================================================
-  // CORS (WAJIB SESUAI DOMAIN AKTIF)
-  // ============================================================
   CORS_ORIGINS: [
     'https://rylac.my.id',
     'https://www.rylac.my.id',
     'https://rylac-app.vercel.app',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://localhost:5000',
   ],
 
 };

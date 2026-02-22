@@ -29,10 +29,10 @@ const server = http.createServer(app);
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: config.CORS_ORIGINS,
+    origin: true,
     credentials: true,
   },
-  maxHttpBufferSize: 1e6, // 1MB
+  maxHttpBufferSize: 1e6,
 });
 
 // Store io instance for use in routes
@@ -45,13 +45,7 @@ app.set('io', io);
 app.set('trust proxy', 1);
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || config.CORS_ORIGINS.includes(origin) || config.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true,
 }));
 
@@ -242,7 +236,7 @@ async function initializeApp() {
       console.log('✅ Admin user created (ID: 268268)');
     }
 
-    server.listen(config.PORT, () => {
+    server.listen(config.PORT, config.HOST, () => {
       console.log(`🚀 Rylac App running on http://localhost:${config.PORT}`);
       console.log(`📊 Admin panel: http://localhost:${config.PORT}/admin`);
       console.log(`🌍 Environment: ${config.NODE_ENV}`);

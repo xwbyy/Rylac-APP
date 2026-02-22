@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "rylac-app",
   "builds": [
     {
       "src": "server.js",
@@ -18,10 +17,32 @@
     },
     {
       "src": "/(.*)",
-      "dest": "server.js"
+      "dest": "public/$1",
+      "continue": true
+    },
+    {
+      "src": "/chat",
+      "dest": "public/chat.html"
+    },
+    {
+      "src": "/login",
+      "dest": "public/login.html"
+    },
+    {
+      "src": "/register",
+      "dest": "public/register.html"
+    },
+    {
+      "src": "/profile",
+      "dest": "public/profile.html"
+    },
+    {
+      "src": "/admin",
+      "dest": "public/admin.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "public/index.html"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }

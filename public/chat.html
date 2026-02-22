@@ -146,10 +146,15 @@
           <button class="reply-cancel" id="cancel-reply">✕</button>
         </div>
         <div class="input-row">
-          <button class="attach-btn" id="attach-btn" title="Attach file">📎</button>
+          <div class="input-menu-container">
+            <button class="menu-toggle-btn" id="menu-toggle-btn" title="More options">＋</button>
+            <div class="input-popover" id="input-popover">
+              <button class="popover-item" id="attach-menu-btn">📎 Document</button>
+              <button class="popover-item" id="gif-menu-btn">🎭 GIF</button>
+              <button class="popover-item" id="emoji-menu-btn">😊 Emoji</button>
+            </div>
+          </div>
           <input type="file" id="file-input" accept="image/*,audio/*,video/*,application/pdf,text/plain" />
-          <button class="gif-btn" id="gif-btn" title="Send GIF">GIF</button>
-          <button class="emoji-btn" id="emoji-btn" title="Emoji">😊</button>
           <div class="msg-input-wrap">
             <textarea class="msg-input" id="msg-input" placeholder="Type a message..." rows="1" maxlength="2000"></textarea>
           </div>

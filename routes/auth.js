@@ -50,14 +50,14 @@ function setAuthCookies(res, accessToken, refreshToken) {
   const isProduction = config.NODE_ENV === 'production';
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    secure: true,
+    sameSite: 'none',
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    secure: true,
+    sameSite: 'none',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/api/auth/refresh',
   });
@@ -235,8 +235,8 @@ router.post('/refresh', async (req, res) => {
     const isProduction = config.NODE_ENV === 'production';
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 15 * 60 * 1000,
     });
 
@@ -305,8 +305,8 @@ router.post('/admin-login', loginLimiter, async (req, res) => {
     const isProduction = config.NODE_ENV === 'production';
     res.cookie('adminToken', adminToken, {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 8 * 60 * 60 * 1000,
     });
 

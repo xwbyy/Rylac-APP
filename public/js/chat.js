@@ -82,6 +82,7 @@ async function init() {
     document.getElementById('app-container').style.display = 'grid';
 
     setupEventListeners();
+    setupPopover();
     setupEmojiPicker();
     loadTrendingGifs();
   } catch (err) {
@@ -113,7 +114,9 @@ function initSocket() {
     if (isFromCurrentChat) {
       appendMessage(msg);
       socket.emit('markRead', { senderId: msg.senderId });
-      scrollToBottom();
+      if (msg.senderId === currentUser.userId) {
+        scrollToBottom();
+      }
     } else {
       // Update unread count
       unreadCounts[msg.senderId] = (unreadCounts[msg.senderId] || 0) + 1;
@@ -754,7 +757,7 @@ function renderGifs(gifs) {
     return;
   }
   grid.innerHTML = gifs.map(gif => `
-    <div class="gif-item" onclick="sendGif(${JSON.stringify(gif).replace(/"/g, '&quot;')})">
+    <div class="gif-item" onclick='sendGif(${JSON.stringify(gif).replace(/'/g, "&apos;").replace(/"/g, "&quot;")})'>
       <img src="${gif.images?.preview_gif?.url || gif.images?.fixed_height_small?.url || ''}" alt="${escHtml(gif.title)}" loading="lazy">
     </div>
   `).join('');
@@ -959,157 +962,52 @@ function showToast(msg, type = 'info', duration = 3000) {
   setTimeout(() => toast.remove(), duration);
 }
 
+function setupPopover() {
+  const toggleBtn = document.getElementById('menu-toggle-btn');
+  const popover = document.getElementById('input-popover');
+  const attachBtn = document.getElementById('attach-menu-btn');
+  const gifBtn = document.getElementById('gif-menu-btn');
+  const emojiBtn = document.getElementById('emoji-menu-btn');
+
+  if (!toggleBtn || !popover) return;
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popover.classList.toggle('show');
+    toggleBtn.classList.toggle('active');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!popover.contains(e.target) && e.target !== toggleBtn) {
+      popover.classList.remove('show');
+      toggleBtn.classList.remove('active');
+    }
+  });
+
+  attachBtn.addEventListener('click', () => {
+    document.getElementById('file-input').click();
+    popover.classList.remove('show');
+    toggleBtn.classList.remove('active');
+  });
+
+  gifBtn.addEventListener('click', () => {
+    document.getElementById('gif-picker').classList.toggle('show');
+    popover.classList.remove('show');
+    toggleBtn.classList.remove('active');
+  });
+
+  emojiBtn.addEventListener('click', () => {
+    document.getElementById('emoji-picker').classList.toggle('show');
+    popover.classList.remove('show');
+    toggleBtn.classList.remove('active');
+  });
+}
+
 // ============================================================
 // EVENT LISTENERS
 // ============================================================
 function setupEventListeners() {
   // Navigation
-  document.getElementById('back-btn').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.remove('hidden');
-  });
-
-  // Close pickers on click outside
-  document.addEventListener('mousedown', (e) => {
-    const gifPicker = document.getElementById('gif-picker');
-    const emojiPicker = document.getElementById('emoji-picker');
-    const gifBtn = document.getElementById('gif-btn');
-    const emojiBtn = document.getElementById('emoji-btn');
-
-    if (!gifPicker.contains(e.target) && !gifBtn.contains(e.target)) {
-      gifPicker.classList.remove('show');
-    }
-    if (!emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
-      emojiPicker.classList.remove('show');
-    }
-  });
-
-  // Send on Enter (not Shift+Enter)
-  document.getElementById('msg-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendTextMessage();
-    }
-  });
-
-  // Typing indicator
-  document.getElementById('msg-input').addEventListener('input', (e) => {
-    adjustTextareaHeight(e.target);
-    if (!currentChat) return;
-    if (!isTyping) {
-      isTyping = true;
-      socket.emit('typing', { receiverId: currentChat.userId, isTyping: true });
-    }
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => {
-      isTyping = false;
-      socket.emit('typing', { receiverId: currentChat.userId, isTyping: false });
-    }, 1500);
-  });
-
-  // Send button
-  document.getElementById('send-btn').addEventListener('click', sendTextMessage);
-
-  // File attachment
-  document.getElementById('attach-btn').addEventListener('click', () => {
-    document.getElementById('file-input').click();
-  });
-  document.getElementById('file-input').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) sendFile(file);
-    e.target.value = '';
-  });
-
-  // GIF button
-  document.getElementById('gif-btn').addEventListener('click', () => {
-    const picker = document.getElementById('gif-picker');
-    picker.classList.toggle('show');
-    document.getElementById('emoji-picker').classList.remove('show');
-  });
-
-  // GIF search
-  let gifSearchTimer;
-  document.getElementById('gif-search').addEventListener('input', (e) => {
-    clearTimeout(gifSearchTimer);
-    const q = e.target.value.trim();
-    gifSearchTimer = setTimeout(() => {
-      if (q) searchGifs(q);
-      else loadTrendingGifs();
-    }, 400);
-  });
-
-  // Emoji button
-  document.getElementById('emoji-btn').addEventListener('click', () => {
-    const picker = document.getElementById('emoji-picker');
-    picker.classList.toggle('show');
-    document.getElementById('gif-picker').classList.remove('show');
-  });
-
-  // Theme toggle
-  document.getElementById('theme-btn').addEventListener('click', toggleTheme);
-
-  // Logout
-  document.getElementById('logout-btn').addEventListener('click', logout);
-
-  // Search modal
-  document.getElementById('search-btn').addEventListener('click', () => openModal('search-modal'));
-  
-  let searchTimer;
-  document.getElementById('user-search-input').addEventListener('input', (e) => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => searchUsers(e.target.value.trim()), 300);
-  });
-
-  // Profile
-  document.getElementById('profile-btn').addEventListener('click', openOwnProfile);
-
-  // Profile form
-  document.getElementById('profile-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const body = {
-      displayName: document.getElementById('edit-displayName').value.trim(),
-      avatar: document.getElementById('edit-avatar').value.trim(),
-      bio: document.getElementById('edit-bio').value.trim(),
-      status: document.getElementById('edit-status').value.trim(),
-      notificationSound: document.getElementById('edit-notif').checked,
-    };
-    try {
-      const res = await fetch('/api/users/profile/update', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.success) {
-        currentUser = { ...currentUser, ...data.user };
-        renderOwnProfile();
-        closeModal('own-profile-modal');
-        showToast('Profile updated!', 'success');
-      } else {
-        showToast(data.message, 'error');
-      }
-    } catch {
-      showToast('Failed to update.', 'error');
-    }
-  });
-
-  // Avatar URL live preview
-  document.getElementById('edit-avatar').addEventListener('input', (e) => {
-    const preview = document.getElementById('edit-avatar-preview');
-    if (e.target.value) {
-      preview.innerHTML = `<img src="${e.target.value}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${currentUser.displayName[0]}'">`;
-    } else {
-      preview.textContent = currentUser.displayName[0].toUpperCase();
-    }
-  });
-
-  // Toggle switch
-  document.getElementById('edit-notif').addEventListener('change', (e) => updateToggle(e.target.checked));
-
-  // Cancel reply
-  document.getElementById('cancel-reply').addEventListener('click', cancelReply);
-
-  // Back button (mobile)
   document.getElementById('back-btn').addEventListener('click', () => {
     document.getElementById('sidebar').classList.remove('hidden');
     document.getElementById('chat-window').style.display = 'none';
@@ -1118,7 +1016,175 @@ function setupEventListeners() {
     history.replaceState(null, '', '/chat');
   });
 
-  // Context menu actions
+  // Close pickers on click outside
+  document.addEventListener('mousedown', (e) => {
+    const gifPicker = document.getElementById('gif-picker');
+    const emojiPicker = document.getElementById('emoji-picker');
+    // Using closest since IDs might not match exactly with popover logic
+    if (gifPicker && !gifPicker.contains(e.target) && !e.target.closest('#gif-menu-btn')) {
+      gifPicker.classList.remove('show');
+    }
+    if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('#emoji-menu-btn')) {
+      emojiPicker.classList.remove('show');
+    }
+  });
+
+  // MSG INPUT
+  const msgInput = document.getElementById('msg-input');
+  if (msgInput) {
+    msgInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        if (window.innerWidth > 768) {
+          e.preventDefault();
+          sendTextMessage();
+        }
+      }
+    });
+
+    msgInput.addEventListener('input', (e) => {
+      adjustTextareaHeight(e.target);
+      if (!currentChat) return;
+      if (!isTyping) {
+        isTyping = true;
+        socket.emit('typing', { receiverId: currentChat.userId, isTyping: true });
+      }
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        isTyping = false;
+        socket.emit('typing', { receiverId: currentChat.userId, isTyping: false });
+      }, 1500);
+    });
+  }
+
+  // SEND
+  const sendBtn = document.getElementById('send-btn');
+  if (sendBtn) sendBtn.addEventListener('click', sendTextMessage);
+
+  // File input
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        sendFile(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
+  }
+
+  // GIF Search
+  const gifSearch = document.getElementById('gif-search');
+  if (gifSearch) {
+    let gifSearchTimer;
+    gifSearch.addEventListener('input', (e) => {
+      clearTimeout(gifSearchTimer);
+      const q = e.target.value.trim();
+      gifSearchTimer = setTimeout(() => {
+        if (q) searchGifs(q);
+        else loadTrendingGifs();
+      }, 400);
+    });
+  }
+
+  // Theme toggle
+  const themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+  // Logout
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+  // Profile Edit
+  const profileBtn = document.getElementById('profile-btn');
+  if (profileBtn) profileBtn.addEventListener('click', openOwnProfile);
+
+  const profileForm = document.getElementById('profile-form');
+  if (profileForm) {
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        displayName: document.getElementById('edit-displayName').value.trim(),
+        avatar: document.getElementById('edit-avatar').value.trim(),
+        bio: document.getElementById('edit-bio').value.trim(),
+        status: document.getElementById('edit-status').value.trim(),
+        notificationSound: document.getElementById('edit-notif').checked,
+      };
+      try {
+        const res = await fetch('/api/users/profile/update', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentUser = { ...currentUser, ...data.user };
+          renderOwnProfile();
+          closeModal('own-profile-modal');
+          showToast('Profile updated!', 'success');
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch {
+        showToast('Failed to update.', 'error');
+      }
+    });
+  }
+
+  // Avatar preview
+  const editAvatar = document.getElementById('edit-avatar');
+  if (editAvatar) {
+    editAvatar.addEventListener('input', (e) => {
+      const preview = document.getElementById('edit-avatar-preview');
+      if (e.target.value) {
+        preview.innerHTML = `<img src="${e.target.value}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='👤'">`;
+      } else {
+        preview.textContent = currentUser.displayName[0].toUpperCase();
+      }
+    });
+  }
+
+  const editNotif = document.getElementById('edit-notif');
+  if (editNotif) editNotif.addEventListener('change', (e) => updateToggle(e.target.checked));
+
+  // Search User
+  const searchBtn = document.getElementById('search-btn');
+  if (searchBtn) searchBtn.addEventListener('click', () => openModal('search-modal'));
+  
+  const userSearchInput = document.getElementById('user-search-input');
+  if (userSearchInput) {
+    let searchTimer;
+    userSearchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => searchUsers(e.target.value.trim()), 300);
+    });
+  }
+
+  // Sidebar contact search
+  const contactSearch = document.getElementById('contact-search');
+  if (contactSearch) {
+    contactSearch.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtered = q ? allContacts.filter(c => 
+        c.displayName.toLowerCase().includes(q) || 
+        c.username.toLowerCase().includes(q) ||
+        c.userId.includes(q)
+      ) : allContacts;
+      renderContacts(filtered);
+    });
+  }
+
+  // REPLY
+  const cancelReplyBtn = document.getElementById('cancel-reply');
+  if (cancelReplyBtn) cancelReplyBtn.addEventListener('click', cancelReply);
+
+  // CONTEXT MENU
+  document.getElementById('ctx-copy').addEventListener('click', () => {
+    const el = document.querySelector(`[data-msg-id="${contextMenuMsgId}"] .message-bubble`);
+    const text = el?.textContent?.trim() || '';
+    navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+    closeContextMenu();
+  });
+
   document.getElementById('ctx-reply').addEventListener('click', () => {
     if (!contextMenuMsgId) return;
     const el = document.querySelector(`[data-msg-id="${contextMenuMsgId}"]`);
@@ -1127,25 +1193,14 @@ function setupEventListeners() {
     closeContextMenu();
   });
 
-  document.getElementById('ctx-copy').addEventListener('click', () => {
-    const el = document.querySelector(`[data-msg-id="${contextMenuMsgId}"] .message-bubble`);
-    const text = el?.textContent?.trim() || '';
-    navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
-    closeContextMenu();
-  });
-
   document.getElementById('ctx-react').addEventListener('click', (e) => {
+    e.stopPropagation();
     const menu = document.getElementById('context-menu');
     const reactMenu = document.getElementById('react-menu');
     reactMenu.style.left = menu.style.left;
     reactMenu.style.top = (parseInt(menu.style.top) + 30) + 'px';
     reactMenu.classList.add('show');
-  });
-
-  document.querySelectorAll('#react-menu .emoji-btn-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (contextMenuMsgId) reactToMessage(contextMenuMsgId, btn.dataset.emoji);
-    });
+    menu.classList.remove('show');
   });
 
   document.getElementById('ctx-delete-me').addEventListener('click', async () => {
@@ -1170,28 +1225,14 @@ function setupEventListeners() {
     } catch {}
   });
 
-  // Contact search filter
-  document.getElementById('contact-search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    const filtered = q ? allContacts.filter(c => 
-      c.displayName.toLowerCase().includes(q) || 
-      c.username.toLowerCase().includes(q) ||
-      c.userId.includes(q)
-    ) : allContacts;
-    renderContacts(filtered);
-  });
-
-  // Close pickers/menus on click outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#gif-picker') && !e.target.closest('#gif-btn')) {
-      document.getElementById('gif-picker').classList.remove('show');
-    }
-    if (!e.target.closest('#emoji-picker') && !e.target.closest('#emoji-btn')) {
-      document.getElementById('emoji-picker').classList.remove('show');
-    }
-    if (!e.target.closest('#context-menu') && !e.target.closest('#react-menu') && !e.target.closest('.message-bubble')) {
-      closeContextMenu();
-    }
+  // Reactions
+  document.querySelectorAll('#react-menu .emoji-btn-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (contextMenuMsgId) {
+        reactToMessage(contextMenuMsgId, btn.dataset.emoji);
+        document.getElementById('react-menu').classList.remove('show');
+      }
+    });
   });
 
   // Modal overlay close on bg click
