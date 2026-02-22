@@ -1,7 +1,7 @@
 const config = {
 
   PORT: parseInt(process.env.PORT || '5000', 10),
-  HOST: process.env.HOST || '0.0.0.0',
+  HOST: process.env.HOST || '',
   NODE_ENV: process.env.NODE_ENV || 'production',
 
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://vynaachan_db_user:<db_password>@cluster0.bqgywaj.mongodb.net/?appName=Cluster0',
