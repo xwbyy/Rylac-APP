@@ -210,7 +210,10 @@
         const data = await res.json();
         if (data.success) {
           showSuccess(`Account created! Your ID: ${data.user.userId}. Redirecting...`);
-          setTimeout(() => { window.location.href = '/chat'; }, 1500);
+          // Ensure cookies are set before redirecting
+          setTimeout(() => { 
+            window.location.replace('/chat'); 
+          }, 500);
         } else {
           showError(data.message || 'Registration failed.');
           setLoading(false);
