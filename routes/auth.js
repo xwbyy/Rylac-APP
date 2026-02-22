@@ -51,8 +51,8 @@ function setAuthCookies(res, accessToken, refreshToken) {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
-    path: '/', // Ensure cookies are accessible site-wide
+    sameSite: isProduction ? 'None' : 'Lax',
+    path: '/',
   };
 
   res.cookie('accessToken', accessToken, {
@@ -240,7 +240,7 @@ router.post('/refresh', async (req, res) => {
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: isProduction ? 'None' : 'Lax',
       path: '/',
       maxAge: 15 * 60 * 1000,
     });
@@ -311,7 +311,7 @@ router.post('/admin-login', loginLimiter, async (req, res) => {
     res.cookie('adminToken', adminToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: isProduction ? 'None' : 'Lax',
       path: '/',
       maxAge: 8 * 60 * 60 * 1000,
     });
