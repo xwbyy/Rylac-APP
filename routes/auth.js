@@ -48,16 +48,19 @@ function generateTokens(user) {
 // Set auth cookies
 function setAuthCookies(res, accessToken, refreshToken) {
   const isProduction = config.NODE_ENV === 'production';
-  res.cookie('accessToken', accessToken, {
+  const cookieOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  };
+
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
+
   res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/api/auth/refresh',
   });
