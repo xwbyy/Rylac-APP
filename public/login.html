@@ -139,7 +139,10 @@
 
         if (data.success) {
           showSuccess('Login successful! Redirecting...');
-          setTimeout(() => { window.location.href = '/chat'; }, 800);
+          // Ensure cookies are set before redirecting
+          setTimeout(() => { 
+            window.location.replace('/chat'); 
+          }, 500);
         } else {
           showError(data.message || 'Login failed.');
           setLoading(false);
