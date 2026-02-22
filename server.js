@@ -249,7 +249,6 @@ async function initializeApp() {
     });
   } catch (err) {
     console.error('❌ Startup error:', err);
-    process.exit(1);
   }
 }
 
@@ -258,4 +257,4 @@ const bcrypt = require('bcryptjs');
 
 initializeApp();
 
-module.exports = { app, server, io };
+module.exports = app;

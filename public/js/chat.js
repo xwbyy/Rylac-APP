@@ -149,7 +149,7 @@ function initSocket() {
   socket.on('messagesRead', ({ readBy }) => {
     if (readBy === currentChat?.userId) {
       // Update checkmarks on sent messages
-      document.querySelectorAll('.msg-status').forEach(el => {
+      document.querySelectorAll('.message-row.sent .msg-status').forEach(el => {
         el.textContent = '✓✓';
         el.style.color = '#6366f1';
       });
@@ -537,23 +537,15 @@ function createMessageEl(msg) {
 }
 
 function renderMessageContent(msg) {
-  const isEmojiOnly = (str) => {
-    const emojiRegex = /^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])+$/g;
-    return str && str.length <= 8 && emojiRegex.test(str);
-  };
-
   switch (msg.type) {
     case 'text':
-      if (isEmojiOnly(msg.content)) {
-        return `<span class="msg-emoji">${escHtml(msg.content)}</span>`;
-      }
       return `<span>${escHtml(msg.content || '').replace(/\n/g, '<br>')}</span>`;
     case 'image':
       return `<img class="msg-image" src="${msg.fileData?.base64 || ''}" alt="Image" onclick="openImagePreview('${msg.fileData?.base64 || ''}')">`;
     case 'gif':
     case 'sticker':
       const gifSrc = msg.giphyData?.url || msg.fileData?.base64 || '';
-      return `<div class="msg-gif-container"><img class="msg-gif" src="${gifSrc}" alt="${escHtml(msg.giphyData?.title || 'GIF')}"></div>`;
+      return `<img class="msg-gif" src="${gifSrc}" alt="${escHtml(msg.giphyData?.title || 'GIF')}">`;
     case 'audio':
       return `<audio class="msg-audio" controls src="${msg.fileData?.base64 || ''}"></audio>`;
     case 'video':
@@ -971,6 +963,26 @@ function showToast(msg, type = 'info', duration = 3000) {
 // EVENT LISTENERS
 // ============================================================
 function setupEventListeners() {
+  // Navigation
+  document.getElementById('back-btn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('hidden');
+  });
+
+  // Close pickers on click outside
+  document.addEventListener('mousedown', (e) => {
+    const gifPicker = document.getElementById('gif-picker');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const gifBtn = document.getElementById('gif-btn');
+    const emojiBtn = document.getElementById('emoji-btn');
+
+    if (!gifPicker.contains(e.target) && !gifBtn.contains(e.target)) {
+      gifPicker.classList.remove('show');
+    }
+    if (!emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
+      emojiPicker.classList.remove('show');
+    }
+  });
+
   // Send on Enter (not Shift+Enter)
   document.getElementById('msg-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1007,30 +1019,30 @@ function setupEventListeners() {
     e.target.value = '';
   });
 
-function toggleGifPicker() {
-  const picker = document.getElementById('gif-picker');
-  const isShown = picker.classList.contains('show');
-  
-  if (!isShown) {
+  // GIF button
+  document.getElementById('gif-btn').addEventListener('click', () => {
+    const picker = document.getElementById('gif-picker');
+    picker.classList.toggle('show');
     document.getElementById('emoji-picker').classList.remove('show');
-    picker.classList.add('show');
-    loadTrendingGifs();
-  } else {
-    picker.classList.remove('show');
-  }
-}
+  });
 
-function toggleEmojiPicker() {
-  const picker = document.getElementById('emoji-picker');
-  const isShown = picker.classList.contains('show');
-  
-  if (!isShown) {
+  // GIF search
+  let gifSearchTimer;
+  document.getElementById('gif-search').addEventListener('input', (e) => {
+    clearTimeout(gifSearchTimer);
+    const q = e.target.value.trim();
+    gifSearchTimer = setTimeout(() => {
+      if (q) searchGifs(q);
+      else loadTrendingGifs();
+    }, 400);
+  });
+
+  // Emoji button
+  document.getElementById('emoji-btn').addEventListener('click', () => {
+    const picker = document.getElementById('emoji-picker');
+    picker.classList.toggle('show');
     document.getElementById('gif-picker').classList.remove('show');
-    picker.classList.add('show');
-  } else {
-    picker.classList.remove('show');
-  }
-}
+  });
 
   // Theme toggle
   document.getElementById('theme-btn').addEventListener('click', toggleTheme);

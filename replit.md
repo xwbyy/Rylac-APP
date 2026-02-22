@@ -2,7 +2,7 @@
 
 ## Overview
 
-Rylac is a production-ready, WhatsApp-like real-time chat application. It provides one-on-one messaging with support for text, images, audio, video, files, and GIFs. The app includes user authentication, profile management, an admin panel, and real-time features like typing indicators, read receipts, and online/offline status. The frontend is built with vanilla HTML/CSS/JavaScript (no framework), and the backend is a Node.js/Express server with MongoDB for persistence and Socket.io for real-time communication.
+Rylac is a production-ready, WhatsApp-like real-time chat application. It provides one-on-one messaging with support for text, images, audio, video, files, and GIFs. The app includes user authentication, profile management, message reactions, reply threads, read receipts, typing indicators, online/offline status, dark/light theming, and a full admin panel. It's built as a monolithic Node.js application serving both the API and static frontend files.
 
 ## User Preferences
 
@@ -10,64 +10,58 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Backend Architecture
+### Backend (Node.js + Express)
 
-- **Runtime**: Node.js (>=18.0.0) with Express.js
-- **Entry point**: `server.js` — sets up Express, creates an HTTP server, attaches Socket.io, connects to MongoDB, and serves static files from `public/`
-- **Configuration**: `config.js` — all config values (ports, secrets, API keys, rate limits) are centralized here. Environment variables are used as overrides where available, but the file includes hardcoded defaults so no `.env` is strictly required.
-- **Real-time**: Socket.io handles WebSocket connections for live messaging, typing indicators, online/offline presence, and read receipts. The `io` instance is attached to the Express app via `app.set('io', io)` so routes can emit events.
-- **Deployment target**: Vercel (via `vercel.json` which routes all traffic to `server.js` using `@vercel/node`). Note: Socket.io on Vercel has limitations since Vercel uses serverless functions; for full WebSocket support, a persistent server host (like Replit) is better.
+- **Entry point:** `server.js` — sets up Express, HTTP server, Socket.io, MongoDB connection, middleware, and routes.
+- **Configuration:** `config.js` — all config values (ports, secrets, API keys, limits) are defined in a single file. Environment variables are used as overrides where available, but defaults are hardcoded so no `.env` file is strictly required.
+- **Database:** MongoDB via Mongoose (`mongoose` package). The connection string points to a MongoDB Atlas cluster. All data (users, messages, app config) is stored in MongoDB.
+- **Authentication:** JWT-based with access tokens (15min) and refresh tokens (7 days). Tokens are stored in httpOnly cookies for XSS protection. Passwords are hashed with bcryptjs (salt rounds: 12). Rate limiting is applied to login endpoints (5 attempts per 15 min per IP+username).
+- **Middleware:** `middleware/auth.js` provides `authenticateToken` (checks access token from cookies or Authorization header) and `requireAdmin` (checks admin token from cookies).
+- **Real-time:** Socket.io handles real-time messaging, typing indicators, online/offline status, read receipts, and message reactions. The Socket.io instance is attached to the Express app via `app.set('io', io)` so routes can emit events.
+- **File uploads:** Multer with memory storage. Files are base64-encoded and stored directly in MongoDB (max 1MB). Allowed types include common image, audio, video, PDF, and text formats.
 
-### API Routes (all under `/api/`)
+### API Routes
 
-| Route File | Prefix | Purpose |
+All routes are prefixed with `/api/`:
+
+| Route File | Path Prefix | Purpose |
 |---|---|---|
 | `routes/auth.js` | `/api/auth` | Register, login, logout, token refresh, admin login |
-| `routes/users.js` | `/api/users` | User search, profile retrieval, profile updates, password changes |
-| `routes/messages.js` | `/api/messages` | Fetch conversation messages, send messages (text + file uploads), reactions, replies, deletions |
-| `routes/admin.js` | `/api/admin` | Dashboard stats, user CRUD, app config management (all routes require admin auth) |
+| `routes/users.js` | `/api/users` | User search, profile viewing, profile editing, password change |
+| `routes/messages.js` | `/api/messages` | Get conversation messages, send messages, reactions, delete, read receipts |
+| `routes/admin.js` | `/api/admin` | Admin dashboard stats, user CRUD, app config management (all routes require admin auth) |
 
-### Authentication & Authorization
+### Data Models (Mongoose)
 
-- **JWT-based auth** with access tokens (15min TTL) and refresh tokens (7-day TTL)
-- Tokens are stored in **httpOnly cookies** (XSS-safe); fallback to `Authorization: Bearer` header
-- **Admin auth** uses a separate `adminToken` cookie verified by the `requireAdmin` middleware
-- Middleware lives in `middleware/auth.js` — `authenticateToken` for regular users, `requireAdmin` for admin routes
-- Passwords hashed with **bcryptjs** (salt rounds: 12)
-- **Rate limiting** on login: 5 attempts per 15 minutes per IP+username combo (via `express-rate-limit`)
+- **`models/User.js`** — User schema with fields: userId (unique numeric string), username, displayName, password, email, avatar, bio, status, theme preference, notification settings, online status, lastSeen, suspension fields, refresh tokens array. Indexed on userId, username, email.
+- **`models/Message.js`** — Message schema with fields: messageId (UUID), conversationId (deterministic from two user IDs), senderId, receiverId, type (text/image/audio/video/file/gif/sticker), content, fileData (with base64 storage), giphyData, reactions, reply references, read status, deletion tracking. Indexed on messageId, conversationId, senderId, receiverId.
+- **`models/AppConfig.js`** — Key-value configuration store for runtime settings (maintenance mode, registration toggle, max message length, feature flags). Includes static method for default values.
 
-### Database (MongoDB via Mongoose)
+### Frontend (Vanilla JavaScript + CSS)
 
-- **Connection**: MongoDB Atlas (connection string in `config.js`, overridable via `MONGODB_URI` env var)
-- **Models** in `models/` directory:
-  - `User.js` — userId (unique numeric string), username (unique, lowercase), displayName, password, avatar, bio, status, theme preference, notification settings, online/offline state, refresh tokens array, suspension flags. Indexed on `userId`, `username`, `email`.
-  - `Message.js` — messageId (UUID), conversationId (derived from sorted user IDs), senderId, receiverId, type (text/image/audio/video/file/gif/sticker), content, fileData (with base64 storage), giphyData, reactions, reply references, read status, deletion tracking. Indexed on `messageId`, `conversationId`, `senderId`, `receiverId`.
-  - `AppConfig.js` — key-value store for runtime app configuration (maintenance mode, registration toggle, max message length, feature flags). Has a static `getDefaults()` method for seeding.
+- **No framework** — the frontend uses plain HTML, CSS, and vanilla JavaScript.
+- **Static files served from `public/` directory** by Express.
+- **Pages:**
+  - `index.html` — Landing page with SEO meta tags, Open Graph, Twitter Cards, and JSON-LD structured data
+  - `login.html` / `register.html` — Auth pages styled with `css/auth.css`
+  - `chat.html` — Main chat interface styled with `css/chat.css`, powered by `js/chat.js`
+  - `profile.html` — User profile page with inline styles
+  - `admin.html` — Admin panel styled with `css/admin.css`
+- **Theming:** Dark/light theme support via CSS custom properties and `[data-theme="dark"]` selector. Theme preference is saved per user in MongoDB.
+- **Fonts:** Google Fonts (Inter) loaded via CDN.
+- **Sound:** Web Audio API for notification sounds (oscillator-based, no audio files).
+- **Socket.io client** connects from `chat.js` for real-time features.
 
-### Frontend Architecture
+### Deployment
 
-- **Vanilla HTML/CSS/JavaScript** — no build step, no framework
-- Static files served from `public/` directory
-- Pages:
-  - `index.html` — landing page with SEO meta tags, Open Graph, structured data
-  - `login.html` / `register.html` — auth forms
-  - `chat.html` — main chat interface (sidebar with contacts, chat area, message input with file/GIF/emoji support)
-  - `profile.html` — user profile view/edit
-  - `admin.html` — admin dashboard with stats, user management, config management
-- CSS files in `public/css/`: `auth.css`, `chat.css`, `admin.css`
-- JS files in `public/js/`: `auth.js`, `chat.js` (and likely admin.js)
-- **Theming**: Dark/light mode toggled client-side, preference saved to MongoDB per user
-- **Sound notifications**: Generated via Web Audio API (oscillator-based), toggleable per user
-- **File uploads**: Via multer (memory storage), files stored as base64 in MongoDB, max 1MB
-- **Responsive design**: CSS handles mobile and desktop layouts
+- **Target platform:** Vercel (configured via `vercel.json`). All routes are directed to `server.js` using `@vercel/node` builder.
+- **Note:** Socket.io on Vercel has limitations (serverless functions don't support persistent WebSocket connections well). For full real-time functionality, a persistent server (like Replit) is more suitable.
 
-### Key Design Decisions
+### Security Considerations
 
-1. **No `.env` file required**: All secrets and config are in `config.js` with env var overrides. This simplifies deployment but means secrets are in the codebase (acceptable for this project's scope).
-2. **Base64 file storage in MongoDB**: Files up to 1MB are stored directly in the database as base64 strings rather than using external file storage. Simple but limits scalability for media-heavy usage.
-3. **Numeric user IDs**: Users get random 6-9 digit numeric IDs (like WhatsApp-style), generated with collision checking.
-4. **Conversation IDs**: Derived by sorting two user IDs and joining them, ensuring a consistent ID regardless of who initiates.
-5. **No frontend framework**: Pure vanilla JS keeps the build process simple — just serve static files.
+- JWT secrets, MongoDB URI, admin credentials, and API keys are hardcoded in `config.js`. In production, these should be moved to environment variables.
+- The `config.js` file contains a real MongoDB Atlas connection string and Giphy API key — treat these as sensitive.
+- Admin credentials default to `admin` / `admin123` — should be changed for any real deployment.
 
 ## External Dependencies
 
@@ -75,27 +69,26 @@ Preferred communication style: Simple, everyday language.
 
 | Package | Purpose |
 |---|---|
-| `express` | HTTP server and routing |
+| `express` | Web server framework |
 | `socket.io` | Real-time WebSocket communication |
 | `mongoose` | MongoDB ODM |
-| `jsonwebtoken` | JWT token creation and verification |
+| `jsonwebtoken` | JWT token generation and verification |
 | `bcryptjs` | Password hashing |
 | `cookie-parser` | Parse cookies from requests |
 | `cors` | Cross-origin resource sharing |
-| `express-rate-limit` | Rate limiting for login and general API |
-| `multer` | Multipart file upload handling |
+| `express-rate-limit` | Rate limiting for login and general API endpoints |
+| `multer` | File upload handling (memory storage) |
 | `uuid` | Generate unique message IDs |
 | `nodemon` (dev) | Auto-restart server during development |
 
 ### External Services
 
-- **MongoDB Atlas**: Cloud-hosted MongoDB database. Connection string is in `config.js` (env var `MONGODB_URI` can override).
-- **Giphy API**: Used for GIF search and sending within chat. API key is in `config.js` (`GIPHY_API_KEY`). Base URL: `https://api.giphy.com/v1`. Can be toggled on/off via app config.
+- **MongoDB Atlas** — Primary database. Connection string is in `config.js`. Uses the `rylac` database.
+- **Giphy API** — GIF search functionality. API key is in `config.js`. Base URL: `https://api.giphy.com/v1`.
+- **Google Fonts CDN** — Inter font family loaded in all HTML pages.
 
-### Running the App
+### Runtime Requirements
 
-- **Start**: `npm start` (runs `node server.js`)
-- **Dev**: `npm run dev` (runs `nodemon server.js`)
-- Default port: 5000 (overridable via `PORT` env var)
-- Requires Node.js >= 18.0.0
-- MongoDB connection must be available (Atlas URI is preconfigured)
+- Node.js >= 18.0.0
+- MongoDB instance (Atlas or local)
+- Default port: 5000 (configurable via `PORT` env var)

@@ -95,68 +95,68 @@
       <p>Choose a contact or search for someone to chat with</p>
     </div>
 
-      <!-- Active chat (hidden by default) -->
-      <div id="chat-window" style="display:none; flex-direction:column; height:100dvh; position:relative; overflow:hidden;">
-        <!-- Chat Header -->
-        <header class="chat-header">
-          <button class="icon-btn back-btn" id="back-btn">←</button>
-          <div class="avatar" id="chat-avatar" onclick="openUserProfile()"></div>
-          <div class="chat-user-info" onclick="openUserProfile()">
-            <div class="chat-username" id="chat-username">Username</div>
-            <div class="chat-status" id="chat-status">Loading...</div>
-          </div>
-          <div class="header-actions">
-            <button class="icon-btn" id="user-search-in-chat-btn" title="Search user" onclick="openUserProfile()">ℹ️</button>
-          </div>
-        </header>
-
-        <!-- Messages Area -->
-        <div class="messages-container" id="messages-container"></div>
-
-        <!-- Input Area Fixed at Bottom -->
-        <footer class="chat-input-area">
-          <div class="reply-bar" id="reply-bar">
-            <div class="reply-bar-content">
-              <div class="reply-bar-name" id="reply-name">User</div>
-              <div id="reply-preview-text" style="font-size:0.82rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">Message</div>
-            </div>
-            <button class="reply-cancel" id="cancel-reply">✕</button>
-          </div>
-          <div class="input-row">
-            <button class="attach-btn" id="attach-btn" title="Attach file">📎</button>
-            <input type="file" id="file-input" accept="image/*,audio/*,video/*,application/pdf,text/plain" />
-            <button class="gif-btn" id="gif-btn" title="Send GIF">GIF</button>
-            <button class="emoji-btn" id="emoji-btn" title="Emoji">😊</button>
-            <div class="msg-input-wrap">
-              <textarea class="msg-input" id="msg-input" placeholder="Type a message..." rows="1" maxlength="2000"></textarea>
-            </div>
-            <button class="send-btn" id="send-btn" title="Send">➤</button>
-          </div>
-        </footer>
+    <!-- Active chat (hidden by default) -->
+    <div id="chat-window" style="display:none; flex-direction:column; height:100%;">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <button class="icon-btn back-btn" id="back-btn">←</button>
+        <div class="avatar" id="chat-avatar" onclick="openUserProfile()"></div>
+        <div class="chat-user-info" onclick="openUserProfile()">
+          <div class="chat-username" id="chat-username">Username</div>
+          <div class="chat-status" id="chat-status">Loading...</div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" id="user-search-in-chat-btn" title="Search user" onclick="openUserProfile()">ℹ️</button>
+        </div>
       </div>
 
-      <!-- GIF Picker Modal -->
-      <div class="modal-picker" id="gif-picker">
-        <div class="picker-header">
-          <h3>Send GIF</h3>
-          <button class="icon-btn" onclick="toggleGifPicker()">✕</button>
+      <!-- Messages -->
+      <div class="messages-container" id="messages-container"></div>
+
+      <!-- GIF Picker -->
+      <div class="gif-picker" id="gif-picker">
+        <div class="gif-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 15px; border-bottom: 1px solid var(--border);">
+          <span style="font-weight:600;">Choose GIF</span>
+          <button onclick="document.getElementById('gif-picker').classList.remove('show')" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
         </div>
-        <div class="gif-search-wrap" style="padding: 0.75rem;">
-          <input type="text" class="gif-search" id="gif-search" placeholder="Search GIFs..." style="width:100%; padding:0.6rem 1rem; border-radius:20px; border:1px solid var(--border); background:var(--input-bg); color:var(--text);" />
+        <div class="gif-search-wrap">
+          <input type="text" class="gif-search" id="gif-search" placeholder="Search GIFs..." />
         </div>
         <div class="gif-grid" id="gif-grid">
           <div class="gif-loading">Loading trending GIFs... 🎭</div>
         </div>
       </div>
 
-      <!-- Emoji Picker Modal -->
-      <div class="modal-picker" id="emoji-picker" style="max-height: 40vh;">
-        <div class="picker-header">
-          <h3>Emojis</h3>
-          <button class="icon-btn" onclick="toggleEmojiPicker()">✕</button>
+      <!-- Emoji Picker -->
+      <div class="emoji-picker" id="emoji-picker">
+        <div class="emoji-header" style="display:flex; justify-content:space-between; align-items:center; padding: 10px 15px; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
+          <span style="font-weight:600;">Select Emoji</span>
+          <button onclick="document.getElementById('emoji-picker').classList.remove('show')" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
         </div>
-        <div class="emoji-grid" id="emoji-grid" style="padding: 1rem;"></div>
+        <div class="emoji-grid" id="emoji-grid"></div>
       </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <div class="reply-bar" id="reply-bar">
+          <div class="reply-bar-content">
+            <div class="reply-bar-name" id="reply-name">User</div>
+            <div id="reply-preview-text" style="font-size:0.82rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">Message</div>
+          </div>
+          <button class="reply-cancel" id="cancel-reply">✕</button>
+        </div>
+        <div class="input-row">
+          <button class="attach-btn" id="attach-btn" title="Attach file">📎</button>
+          <input type="file" id="file-input" accept="image/*,audio/*,video/*,application/pdf,text/plain" />
+          <button class="gif-btn" id="gif-btn" title="Send GIF">GIF</button>
+          <button class="emoji-btn" id="emoji-btn" title="Emoji">😊</button>
+          <div class="msg-input-wrap">
+            <textarea class="msg-input" id="msg-input" placeholder="Type a message..." rows="1" maxlength="2000"></textarea>
+          </div>
+          <button class="send-btn" id="send-btn" title="Send">➤</button>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
