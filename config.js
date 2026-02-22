@@ -4,7 +4,7 @@ const config = {
   HOST: process.env.HOST || '0.0.0.0',
   NODE_ENV: process.env.NODE_ENV || 'production',
 
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://Vercel-Admin-rylac:0jKpyRiBlKdYfVed@rylac.iiqlafl.mongodb.net/rylac?retryWrites=true&w=majority',
+  MONGODB_URI: process.env.MONGODB_URI || 'mongodb+srv://vynaachan_db_user:<db_password>@cluster0.bqgywaj.mongodb.net/?appName=Cluster0',
 
   JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || 'rylac_access_secret_key_2024_xK9mP3qL8nR5vT2w',
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'rylac_refresh_secret_key_2024_yH7jN4sM6uQ1xZ9c',
