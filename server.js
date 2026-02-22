@@ -29,7 +29,7 @@ const server = http.createServer(app);
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: config.CORS_ORIGINS,
+    origin: true,
     credentials: true,
   },
   maxHttpBufferSize: 1e6,
@@ -45,7 +45,7 @@ app.set('io', io);
 app.set('trust proxy', 1);
 
 app.use(cors({
-  origin: config.CORS_ORIGINS,
+  origin: true, // Allow all origins for production compatibility
   credentials: true,
 }));
 

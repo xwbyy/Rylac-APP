@@ -52,6 +52,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
+    path: '/', // Ensure cookies are accessible site-wide
   };
 
   res.cookie('accessToken', accessToken, {
@@ -238,8 +239,9 @@ router.post('/refresh', async (req, res) => {
     const isProduction = config.NODE_ENV === 'production';
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/',
       maxAge: 15 * 60 * 1000,
     });
 
@@ -308,8 +310,9 @@ router.post('/admin-login', loginLimiter, async (req, res) => {
     const isProduction = config.NODE_ENV === 'production';
     res.cookie('adminToken', adminToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/',
       maxAge: 8 * 60 * 60 * 1000,
     });
 
