@@ -63,7 +63,6 @@ function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('refreshToken', refreshToken, {
     ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: '/', // Changed from /api/auth/refresh to / for better compatibility
   });
 }
 
@@ -263,8 +262,16 @@ router.post('/logout', authenticateToken, async (req, res) => {
       );
     }
 
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+    const isProduction = config.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'None' : 'Lax',
+      path: '/',
+    };
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     res.json({ success: true, message: 'Logged out successfully.' });
   } catch (err) {
@@ -329,3 +336,4 @@ router.post('/admin-logout', (req, res) => {
 });
 
 module.exports = router;
+      
