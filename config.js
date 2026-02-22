@@ -1,10 +1,9 @@
 const config = {
 
   PORT: parseInt(process.env.PORT || '5000', 10),
-  HOST: process.env.HOST || '',
   NODE_ENV: process.env.NODE_ENV || 'production',
 
-  MONGODB_URI: process.env.MONGODB_URI || 'MONGODB_URI="mongodb+srv://Vercel-Admin-rylackuh:soXGqsV2iN0mIyT0@rylackuh.n9pmimy.mongodb.net/?retryWrites=true&w=majority"',
+  MONGODB_URI: "mongodb+srv://Vercel-Admin-rylackuh:soXGqsV2iN0mIyT0@rylackuh.n9pmimy.mongodb.net/?retryWrites=true&w=majority",
 
   JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || 'rylac_access_secret_key_2024_xK9mP3qL8nR5vT2w',
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'rylac_refresh_secret_key_2024_yH7jN4sM6uQ1xZ9c',

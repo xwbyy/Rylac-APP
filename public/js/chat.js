@@ -56,7 +56,11 @@ function playSound(type) {
 // ============================================================
 async function init() {
   try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    const res = await fetch('/api/auth/me', { 
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      credentials: 'include' 
+    });
     const data = await res.json();
 
     if (!data.success) {

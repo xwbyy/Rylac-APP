@@ -236,8 +236,8 @@ async function initializeApp() {
       console.log('✅ Admin user created (ID: 268268)');
     }
 
-    server.listen(config.PORT, config.HOST, () => {
-      console.log(`🚀 Rylac App running on http://localhost:${config.PORT}`);
+    server.listen(config.PORT, '0.0.0.0', () => {
+      console.log(`🚀 Rylac App running on port ${config.PORT}`);
       console.log(`📊 Admin panel: http://localhost:${config.PORT}/admin`);
       console.log(`🌍 Environment: ${config.NODE_ENV}`);
     });
