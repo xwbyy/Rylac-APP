@@ -45,7 +45,11 @@ app.set('io', io);
 app.set('trust proxy', 1);
 
 app.use(cors({
-  origin: true, // Allow all origins for production compatibility
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if(!origin) return callback(null, true);
+    return callback(null, true);
+  },
   credentials: true,
 }));
 

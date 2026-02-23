@@ -51,7 +51,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'None' : 'Lax',
+    sameSite: 'Lax',
     path: '/',
   };
 
@@ -239,7 +239,7 @@ router.post('/refresh', async (req, res) => {
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'None' : 'Lax',
+      sameSite: 'Lax',
       path: '/',
       maxAge: 15 * 60 * 1000,
     });
@@ -318,7 +318,7 @@ router.post('/admin-login', loginLimiter, async (req, res) => {
     res.cookie('adminToken', adminToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'None' : 'Lax',
+      sameSite: 'Lax',
       path: '/',
       maxAge: 8 * 60 * 60 * 1000,
     });
