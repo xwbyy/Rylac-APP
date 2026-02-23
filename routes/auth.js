@@ -7,21 +7,25 @@ const config = require('../config');
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
-// Rate limiter for login/register
+// Rate limiter untuk login
 const loginLimiter = rateLimit({
   windowMs: config.LOGIN_RATE_LIMIT_WINDOW,
   max: config.LOGIN_RATE_LIMIT_MAX,
   message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip + ':' + (req.body?.username || ''),
+  keyGenerator: (req) => {
+    // Generate key berdasarkan IP + username untuk mencegah brute force
+    return req.ip + ':' + (req.body?.username || '');
+  },
 });
 
-// Generate unique numeric user ID (8-12 digits)
+// Generate unique numeric user ID
 async function generateUniqueUserId() {
   let userId;
   let exists = true;
   while (exists) {
+    // Generate ID antara 100000 - 999999999 (6-9 digit)
     const min = 100000;
     const max = 999999999;
     userId = String(Math.floor(Math.random() * (max - min + 1)) + min);
@@ -33,45 +37,70 @@ async function generateUniqueUserId() {
 // Generate tokens
 function generateTokens(user) {
   const accessToken = jwt.sign(
-    { userId: user.userId, username: user.username, isAdmin: user.isAdmin },
+    { userId: user.userId, username: user.username, isAdmin: user.isAdmin || false },
     config.JWT_ACCESS_SECRET,
     { expiresIn: config.JWT_ACCESS_EXPIRES }
   );
+  
   const refreshToken = jwt.sign(
     { userId: user.userId },
     config.JWT_REFRESH_SECRET,
     { expiresIn: config.JWT_REFRESH_EXPIRES }
   );
+  
   return { accessToken, refreshToken };
 }
 
-// Set auth cookies
+// Set auth cookies - FIXED VERSION
 function setAuthCookies(res, accessToken, refreshToken) {
   const isProduction = config.NODE_ENV === 'production';
-  const cookieOptions = {
+  
+  // Cookie options yang konsisten untuk semua environment
+  const baseOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: 'Lax',
+    secure: isProduction, // true di production (HTTPS), false di development (HTTP)
+    sameSite: isProduction ? 'None' : 'Lax', // None di production untuk cross-site, Lax di local
     path: '/',
   };
 
+  // Access token - 15 menit
   res.cookie('accessToken', accessToken, {
-    ...cookieOptions,
-    maxAge: 15 * 60 * 1000, // 15 minutes
+    ...baseOptions,
+    maxAge: 15 * 60 * 1000, // 15 menit
   });
 
+  // Refresh token - 7 hari
   res.cookie('refreshToken', refreshToken, {
-    ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    ...baseOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
   });
+
+  console.log(`✅ Cookies set: production=${isProduction}, sameSite=${baseOptions.sameSite}`);
 }
 
-// POST /api/auth/register
+// Clear auth cookies
+function clearAuthCookies(res) {
+  const isProduction = config.NODE_ENV === 'production';
+  
+  const options = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'None' : 'Lax',
+    path: '/',
+  };
+
+  res.clearCookie('accessToken', options);
+  res.clearCookie('refreshToken', options);
+}
+
+// ============================================================
+// REGISTER
+// ============================================================
 router.post('/register', async (req, res) => {
   try {
     const { username, displayName, password, email } = req.body;
 
-    // Validation
+    // Validasi input
     if (!username || !password || !displayName) {
       return res.status(400).json({ success: false, message: 'Username, display name, and password are required.' });
     }
@@ -92,20 +121,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Display name must be between 1 and 50 characters.' });
     }
 
-    // Check if registration is allowed
+    // Cek apakah registrasi diizinkan
     const AppConfig = require('../models/AppConfig');
     const allowReg = await AppConfig.findOne({ key: 'allow_registration' });
     if (allowReg && allowReg.value === false) {
       return res.status(403).json({ success: false, message: 'Registration is currently disabled.' });
     }
 
-    // Check username uniqueness
+    // Cek username uniqueness
     const existingUser = await User.findOne({ username: username.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'Username already taken.' });
     }
 
-    // Check email uniqueness
+    // Cek email jika ada
     if (email) {
       const existingEmail = await User.findOne({ email: email.toLowerCase() });
       if (existingEmail) {
@@ -130,11 +159,13 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
+    console.log(`✅ User created: ${username} (${userId})`);
 
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user);
 
-    // Save refresh token to DB
+    // Save refresh token ke DB
+    user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens.push({ token: refreshToken });
     await user.save();
 
@@ -152,7 +183,9 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
+// ============================================================
+// LOGIN - FIXED VERSION
+// ============================================================
 router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -161,13 +194,18 @@ router.post('/login', loginLimiter, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Username and password are required.' });
     }
 
+    console.log(`🔐 Login attempt: ${username}`);
+
     // Find user
     const user = await User.findOne({ username: username.toLowerCase() });
+    
     if (!user) {
+      console.log(`❌ User not found: ${username}`);
       return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
 
     if (user.isSuspended) {
+      console.log(`🚫 Suspended user: ${username}`);
       return res.status(403).json({ 
         success: false, 
         message: `Account suspended${user.suspendReason ? ': ' + user.suspendReason : '.'}` 
@@ -176,20 +214,30 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     // Verify password
     const isValid = await bcrypt.compare(password, user.password);
+    
     if (!isValid) {
+      console.log(`❌ Invalid password for: ${username}`);
       return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
+
+    console.log(`✅ Password valid for: ${username}`);
 
     // Generate tokens
     const { accessToken, refreshToken } = generateTokens(user);
 
     // Clean old refresh tokens (keep last 5)
+    user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens = user.refreshTokens.slice(-4);
     user.refreshTokens.push({ token: refreshToken });
     await user.save();
 
-    // Set cookies
+    console.log(`✅ Tokens generated for: ${username}`);
+
+    // Set cookies - INI YANG PENTING!
     setAuthCookies(res, accessToken, refreshToken);
+
+    // Log cookies yang diset (untuk debugging)
+    console.log(`🍪 Cookies set for: ${username}`);
 
     res.json({
       success: true,
@@ -202,7 +250,9 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-// POST /api/auth/refresh - Refresh access token
+// ============================================================
+// REFRESH TOKEN
+// ============================================================
 router.post('/refresh', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;
@@ -211,6 +261,8 @@ router.post('/refresh', async (req, res) => {
       return res.status(401).json({ success: false, message: 'No refresh token.' });
     }
 
+    console.log('🔄 Refreshing token...');
+
     const decoded = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET);
     const user = await User.findOne({ userId: decoded.userId });
 
@@ -218,8 +270,9 @@ router.post('/refresh', async (req, res) => {
       return res.status(401).json({ success: false, message: 'User not found.' });
     }
 
-    // Check if refresh token exists in DB
-    const tokenExists = user.refreshTokens.some(t => t.token === refreshToken);
+    // Cek apakah refresh token ada di DB
+    const tokenExists = user.refreshTokens && user.refreshTokens.some(t => t.token === refreshToken);
+    
     if (!tokenExists) {
       return res.status(401).json({ success: false, message: 'Invalid refresh token.' });
     }
@@ -236,42 +289,43 @@ router.post('/refresh', async (req, res) => {
     );
 
     const isProduction = config.NODE_ENV === 'production';
+    
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'Lax',
+      sameSite: isProduction ? 'None' : 'Lax',
       path: '/',
       maxAge: 15 * 60 * 1000,
     });
 
+    console.log('✅ Token refreshed');
+
     res.json({ success: true, message: 'Token refreshed.' });
   } catch (err) {
+    console.error('Refresh error:', err);
     return res.status(401).json({ success: false, message: 'Invalid or expired refresh token.' });
   }
 });
 
-// POST /api/auth/logout
+// ============================================================
+// LOGOUT
+// ============================================================
 router.post('/logout', authenticateToken, async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;
     
     if (refreshToken) {
+      // Hapus refresh token dari DB
       await User.updateOne(
         { userId: req.user.userId },
         { $pull: { refreshTokens: { token: refreshToken } } }
       );
     }
 
-    const isProduction = config.NODE_ENV === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'None' : 'Lax',
-      path: '/',
-    };
+    // Clear cookies
+    clearAuthCookies(res);
 
-    res.clearCookie('accessToken', cookieOptions);
-    res.clearCookie('refreshToken', cookieOptions);
+    console.log(`✅ Logout: ${req.user.username}`);
 
     res.json({ success: true, message: 'Logged out successfully.' });
   } catch (err) {
@@ -280,12 +334,16 @@ router.post('/logout', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/auth/me - Get current user
+// ============================================================
+// GET CURRENT USER
+// ============================================================
 router.get('/me', authenticateToken, (req, res) => {
   res.json({ success: true, user: req.user.toSafeObject() });
 });
 
-// POST /api/auth/check-username - Check username availability
+// ============================================================
+// CHECK USERNAME AVAILABILITY
+// ============================================================
 router.post('/check-username', async (req, res) => {
   try {
     const { username } = req.body;
@@ -299,7 +357,9 @@ router.post('/check-username', async (req, res) => {
   }
 });
 
-// POST /api/auth/admin-login
+// ============================================================
+// ADMIN LOGIN
+// ============================================================
 router.post('/admin-login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -315,25 +375,36 @@ router.post('/admin-login', loginLimiter, async (req, res) => {
     );
 
     const isProduction = config.NODE_ENV === 'production';
+    
     res.cookie('adminToken', adminToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'Lax',
+      sameSite: isProduction ? 'None' : 'Lax',
       path: '/',
       maxAge: 8 * 60 * 60 * 1000,
     });
 
     res.json({ success: true, message: 'Admin login successful.' });
   } catch (err) {
+    console.error('Admin login error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-// POST /api/auth/admin-logout
+// ============================================================
+// ADMIN LOGOUT
+// ============================================================
 router.post('/admin-logout', (req, res) => {
-  res.clearCookie('adminToken');
+  const isProduction = config.NODE_ENV === 'production';
+  
+  res.clearCookie('adminToken', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'None' : 'Lax',
+    path: '/',
+  });
+  
   res.json({ success: true, message: 'Admin logged out.' });
 });
 
 module.exports = router;
-      
