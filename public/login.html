@@ -84,8 +84,27 @@
   </div>
 
   <script>
-    // Use the Auth utility
-    Auth.redirectIfLoggedIn();
+    // Check if already logged in
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me', { 
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            window.location.href = '/chat';
+          }
+        }
+      } catch (err) {
+        console.log('Not logged in');
+      }
+    }
+    
+    checkAuth();
 
     const form = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
@@ -104,11 +123,13 @@
       errorMsg.style.display = 'block';
       successMsg.style.display = 'none';
     }
+    
     function showSuccess(msg) {
       successMsg.textContent = msg;
       successMsg.style.display = 'block';
       errorMsg.style.display = 'none';
     }
+    
     function setLoading(loading) {
       loginBtn.disabled = loading;
       loginBtn.querySelector('.btn-text').style.display = loading ? 'none' : 'inline';
@@ -117,6 +138,7 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
@@ -126,20 +148,49 @@
       }
 
       setLoading(true);
+      showError(''); // Clear previous error
+      
       try {
+        console.log('📤 Sending login request...');
+        
         const res = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include', // PENTING! Mengirim cookies
           body: JSON.stringify({ username, password }),
         });
+
+        console.log('📥 Response status:', res.status);
+        
         const data = await res.json();
+        console.log('📥 Response data:', data);
 
         if (data.success) {
           showSuccess('Login successful! Redirecting...');
+          
+          // Verifikasi cookie tersimpan
+          const checkRes = await fetch('/api/auth/me', { 
+            credentials: 'include',
+            cache: 'no-cache'
+          });
+          
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            if (checkData.success) {
+              console.log('✅ Auth verified, redirecting to /chat');
+              window.location.href = '/chat';
+              return;
+            }
+          }
+          
+          // Fallback redirect setelah delay
           setTimeout(() => { 
-            window.location.replace('/chat'); 
-          }, 500);
+            window.location.href = '/chat'; 
+          }, 1000);
+          
         } else {
           showError(data.message || 'Login failed.');
           setLoading(false);
