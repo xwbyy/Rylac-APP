@@ -6,7 +6,34 @@ const Message = require('../models/Message');
 const AppConfig = require('../models/AppConfig');
 const { requireAdmin } = require('../middleware/auth');
 
-// All admin routes require admin auth
+// ============================================================
+// VERIFY ADMIN - Public endpoint untuk mengecek admin session
+// ============================================================
+router.get('/verify', (req, res) => {
+  const adminToken = req.cookies?.adminToken;
+  
+  if (!adminToken) {
+    return res.json({ success: false, message: 'No admin token' });
+  }
+
+  try {
+    const jwt = require('jsonwebtoken');
+    const config = require('../config');
+    const decoded = jwt.verify(adminToken, config.JWT_ACCESS_SECRET);
+    
+    if (decoded && decoded.isAdmin) {
+      return res.json({ success: true, admin: decoded });
+    } else {
+      return res.json({ success: false, message: 'Not admin' });
+    }
+  } catch (err) {
+    return res.json({ success: false, message: 'Invalid token' });
+  }
+});
+
+// ============================================================
+// SEMUA ROUTE DI BAWAH INI MEMERLUKAN ADMIN AUTH
+// ============================================================
 router.use(requireAdmin);
 
 // GET /api/admin/stats - Dashboard statistics
@@ -41,6 +68,7 @@ router.get('/stats', async (req, res) => {
       },
     });
   } catch (err) {
+    console.error('Stats error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -52,10 +80,12 @@ router.get('/users', async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     let query = { isAdmin: false };
+    
     if (search) {
       const regex = new RegExp(search, 'i');
       query.$or = [{ username: regex }, { displayName: regex }, { userId: search }];
     }
+    
     if (filter === 'suspended') query.isSuspended = true;
     if (filter === 'active') query.isSuspended = false;
     if (filter === 'online') query.isOnline = true;
@@ -74,6 +104,7 @@ router.get('/users', async (req, res) => {
       pagination: { page: parseInt(page), limit: parseInt(limit), total },
     });
   } catch (err) {
+    console.error('Users list error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -95,6 +126,7 @@ router.put('/users/:userId/suspend', async (req, res) => {
 
     res.json({ success: true, message: 'User suspended.', user });
   } catch (err) {
+    console.error('Suspend error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -112,6 +144,7 @@ router.put('/users/:userId/activate', async (req, res) => {
 
     res.json({ success: true, message: 'User activated.', user });
   } catch (err) {
+    console.error('Activate error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -134,6 +167,7 @@ router.put('/users/:userId/reset-password', async (req, res) => {
 
     res.json({ success: true, message: 'Password reset successfully.' });
   } catch (err) {
+    console.error('Reset password error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -153,6 +187,7 @@ router.delete('/users/:userId', async (req, res) => {
 
     res.json({ success: true, message: 'User and all messages deleted.' });
   } catch (err) {
+    console.error('Delete user error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -175,6 +210,7 @@ router.get('/messages', async (req, res) => {
 
     res.json({ success: true, messages, pagination: { page: parseInt(page), total } });
   } catch (err) {
+    console.error('Messages list error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -196,6 +232,7 @@ router.delete('/messages/:messageId', async (req, res) => {
 
     res.json({ success: true, message: 'Message deleted.' });
   } catch (err) {
+    console.error('Delete message error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -206,6 +243,7 @@ router.get('/config', async (req, res) => {
     const configs = await AppConfig.find().sort({ key: 1 });
     res.json({ success: true, configs });
   } catch (err) {
+    console.error('Config list error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -221,13 +259,9 @@ router.put('/config/:key', async (req, res) => {
     );
     res.json({ success: true, config });
   } catch (err) {
+    console.error('Update config error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
-});
-
-// GET /api/admin/verify - Verify admin token
-router.get('/verify', (req, res) => {
-  res.json({ success: true, admin: req.admin });
 });
 
 module.exports = router;
