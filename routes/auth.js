@@ -15,7 +15,6 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    // Generate key berdasarkan IP + username untuk mencegah brute force
     return req.ip + ':' + (req.body?.username || '');
   },
 });
@@ -25,7 +24,6 @@ async function generateUniqueUserId() {
   let userId;
   let exists = true;
   while (exists) {
-    // Generate ID antara 100000 - 999999999 (6-9 digit)
     const min = 100000;
     const max = 999999999;
     userId = String(Math.floor(Math.random() * (max - min + 1)) + min);
@@ -55,27 +53,27 @@ function generateTokens(user) {
 function setAuthCookies(res, accessToken, refreshToken) {
   const isProduction = config.NODE_ENV === 'production';
   
-  // Cookie options yang konsisten untuk semua environment
+  // Base cookie options
   const baseOptions = {
     httpOnly: true,
-    secure: isProduction, // true di production (HTTPS), false di development (HTTP)
-    sameSite: isProduction ? 'None' : 'Lax', // None di production untuk cross-site, Lax di local
+    secure: isProduction,
+    sameSite: isProduction ? 'None' : 'Lax',
     path: '/',
   };
 
   // Access token - 15 menit
   res.cookie('accessToken', accessToken, {
     ...baseOptions,
-    maxAge: 15 * 60 * 1000, // 15 menit
+    maxAge: 15 * 60 * 1000,
   });
 
   // Refresh token - 7 hari
   res.cookie('refreshToken', refreshToken, {
     ...baseOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  console.log(`✅ Cookies set: production=${isProduction}, sameSite=${baseOptions.sameSite}`);
+  console.log(`🍪 Cookies set: production=${isProduction}, sameSite=${baseOptions.sameSite}`);
 }
 
 // Clear auth cookies
@@ -233,10 +231,27 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     console.log(`✅ Tokens generated for: ${username}`);
 
-    // Set cookies - INI YANG PENTING!
-    setAuthCookies(res, accessToken, refreshToken);
+    // Set cookies
+    const isProduction = config.NODE_ENV === 'production';
+    
+    // Access token cookie
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'None' : 'Lax',
+      path: '/',
+      maxAge: 15 * 60 * 1000,
+    });
 
-    // Log cookies yang diset (untuk debugging)
+    // Refresh token cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'None' : 'Lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     console.log(`🍪 Cookies set for: ${username}`);
 
     res.json({
@@ -323,7 +338,16 @@ router.post('/logout', authenticateToken, async (req, res) => {
     }
 
     // Clear cookies
-    clearAuthCookies(res);
+    const isProduction = config.NODE_ENV === 'production';
+    const options = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'None' : 'Lax',
+      path: '/',
+    };
+
+    res.clearCookie('accessToken', options);
+    res.clearCookie('refreshToken', options);
 
     console.log(`✅ Logout: ${req.user.username}`);
 
@@ -338,7 +362,11 @@ router.post('/logout', authenticateToken, async (req, res) => {
 // GET CURRENT USER
 // ============================================================
 router.get('/me', authenticateToken, (req, res) => {
-  res.json({ success: true, user: req.user.toSafeObject() });
+  console.log(`📋 /me endpoint - User: ${req.user.username}`);
+  res.json({ 
+    success: true, 
+    user: req.user.toSafeObject()
+  });
 });
 
 // ============================================================
