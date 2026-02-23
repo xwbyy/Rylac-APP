@@ -11,7 +11,6 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
   <script defer src="/_vercel/insights/script.js"></script>
   <link rel="stylesheet" href="/css/auth.css">
-  <script src="/js/auth.js"></script>
 </head>
 <body>
   <div class="auth-page">
@@ -84,28 +83,41 @@
   </div>
 
   <script>
+    // ============================================================
+    // LOGIN PAGE - FIXED VERSION
+    // ============================================================
+
     // Check if already logged in
     async function checkAuth() {
       try {
+        console.log('🔍 Checking auth status...');
         const res = await fetch('/api/auth/me', { 
           method: 'GET',
           credentials: 'include',
-          headers: { 'Accept': 'application/json' }
+          headers: { 
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
         });
         
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
+            console.log('✅ Already logged in, redirecting to chat');
             window.location.href = '/chat';
           }
+        } else {
+          console.log('❌ Not logged in');
         }
       } catch (err) {
-        console.log('Not logged in');
+        console.log('Auth check error:', err);
       }
     }
     
-    checkAuth();
+    // Jalankan setelah DOM siap
+    setTimeout(checkAuth, 100);
 
+    // DOM Elements
     const form = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
     const successMsg = document.getElementById('success-msg');
@@ -113,29 +125,40 @@
     const togglePwd = document.getElementById('toggle-pwd');
     const passwordInput = document.getElementById('password');
 
+    // Toggle password visibility
     togglePwd.addEventListener('click', () => {
       passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
       togglePwd.textContent = passwordInput.type === 'password' ? '👁️' : '🙈';
     });
 
+    // Helper functions
     function showError(msg) {
-      errorMsg.textContent = msg;
-      errorMsg.style.display = 'block';
-      successMsg.style.display = 'none';
+      if (errorMsg) {
+        errorMsg.textContent = msg;
+        errorMsg.style.display = 'block';
+      }
+      if (successMsg) successMsg.style.display = 'none';
     }
     
     function showSuccess(msg) {
-      successMsg.textContent = msg;
-      successMsg.style.display = 'block';
-      errorMsg.style.display = 'none';
+      if (successMsg) {
+        successMsg.textContent = msg;
+        successMsg.style.display = 'block';
+      }
+      if (errorMsg) errorMsg.style.display = 'none';
     }
     
     function setLoading(loading) {
+      if (!loginBtn) return;
       loginBtn.disabled = loading;
-      loginBtn.querySelector('.btn-text').style.display = loading ? 'none' : 'inline';
-      loginBtn.querySelector('.btn-loader').style.display = loading ? 'inline' : 'none';
+      const btnText = loginBtn.querySelector('.btn-text');
+      const btnLoader = loginBtn.querySelector('.btn-loader');
+      
+      if (btnText) btnText.style.display = loading ? 'none' : 'inline';
+      if (btnLoader) btnLoader.style.display = loading ? 'inline' : 'none';
     }
 
+    // Form submit handler
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -148,10 +171,10 @@
       }
 
       setLoading(true);
-      showError(''); // Clear previous error
+      showError('');
       
       try {
-        console.log('📤 Sending login request...');
+        console.log('📤 Sending login request for:', username);
         
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -159,37 +182,42 @@
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          credentials: 'include', // PENTING! Mengirim cookies
+          credentials: 'include',
           body: JSON.stringify({ username, password }),
         });
 
-        console.log('📥 Response status:', res.status);
+        console.log('📥 Login response status:', res.status);
         
         const data = await res.json();
-        console.log('📥 Response data:', data);
+        console.log('📥 Login response data:', data);
 
         if (data.success) {
           showSuccess('Login successful! Redirecting...');
           
-          // Verifikasi cookie tersimpan
-          const checkRes = await fetch('/api/auth/me', { 
-            credentials: 'include',
-            cache: 'no-cache'
-          });
-          
-          if (checkRes.ok) {
-            const checkData = await checkRes.json();
-            if (checkData.success) {
-              console.log('✅ Auth verified, redirecting to /chat');
-              window.location.href = '/chat';
-              return;
+          // Tunggu sebentar untuk cookie tersimpan
+          setTimeout(async () => { 
+            try {
+              // Verifikasi cookie
+              const checkRes = await fetch('/api/auth/me', { 
+                credentials: 'include',
+                cache: 'no-cache'
+              });
+              
+              if (checkRes.ok) {
+                const checkData = await checkRes.json();
+                if (checkData.success) {
+                  console.log('✅ Auth verified, redirecting to /chat');
+                  window.location.href = '/chat';
+                  return;
+                }
+              }
+            } catch (e) {
+              console.warn('Verification failed:', e);
             }
-          }
-          
-          // Fallback redirect setelah delay
-          setTimeout(() => { 
+            
+            // Fallback redirect
             window.location.href = '/chat'; 
-          }, 1000);
+          }, 500);
           
         } else {
           showError(data.message || 'Login failed.');
@@ -201,6 +229,9 @@
         setLoading(false);
       }
     });
+
+    // Debug: Log cookies
+    console.log('🍪 Initial cookies:', document.cookie);
   </script>
 </body>
 </html>
